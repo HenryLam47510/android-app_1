@@ -1,0 +1,96 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6">
+  <diagram name="Page-1" id="UcdVwnuYNhdeFtZM8-Bh">
+    <mxGraphModel dx="1426" dy="889" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="45RYCuC-ix0mDewOZhSB-3" edge="1" parent="1" source="45RYCuC-ix0mDewOZhSB-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=17;dashed=1;" target="45RYCuC-ix0mDewOZhSB-2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-10" connectable="0" parent="45RYCuC-ix0mDewOZhSB-3" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=17;" value="HTTP Request" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint x="70" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontSize=17;" value="Flutter app" vertex="1">
+          <mxGeometry height="60" width="120" x="270" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-5" edge="1" parent="1" source="45RYCuC-ix0mDewOZhSB-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=17;dashed=1;" target="45RYCuC-ix0mDewOZhSB-4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-9" connectable="0" parent="45RYCuC-ix0mDewOZhSB-5" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=17;" value="Image Processing" vertex="1">
+          <mxGeometry relative="1" x="0.075" y="2" as="geometry">
+            <mxPoint x="78" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontSize=17;" value="Backend API" vertex="1">
+          <mxGeometry height="60" width="120" x="270" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-7" edge="1" parent="1" source="45RYCuC-ix0mDewOZhSB-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=17;" target="45RYCuC-ix0mDewOZhSB-6" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontSize=17;" value="AI Mode&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;l&lt;/span&gt;&lt;div&gt;emotion detection&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="270" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontSize=17;" value="Database&lt;div&gt;emotion history&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="270" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-32" edge="1" parent="1" source="45RYCuC-ix0mDewOZhSB-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="45RYCuC-ix0mDewOZhSB-31" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-20" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="user" vertex="1">
+          <mxGeometry height="80" width="120" x="725" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-34" edge="1" parent="1" source="45RYCuC-ix0mDewOZhSB-31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="45RYCuC-ix0mDewOZhSB-33" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-31" parent="1" style="whiteSpace=wrap;html=1;" value="flutter app" vertex="1">
+          <mxGeometry height="60" width="120" x="885" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-36" edge="1" parent="1" source="45RYCuC-ix0mDewOZhSB-33" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="45RYCuC-ix0mDewOZhSB-35" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-33" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="send image" vertex="1">
+          <mxGeometry height="110" width="150" x="870" y="405" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-38" edge="1" parent="1" source="45RYCuC-ix0mDewOZhSB-35" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="45RYCuC-ix0mDewOZhSB-37" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-35" parent="1" style="whiteSpace=wrap;html=1;" value="backend server" vertex="1">
+          <mxGeometry height="60" width="120" x="710" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-40" edge="1" parent="1" source="45RYCuC-ix0mDewOZhSB-37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="45RYCuC-ix0mDewOZhSB-39" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="940" y="585" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-37" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Image Preprocessing" vertex="1">
+          <mxGeometry height="90" width="150" x="695" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-42" edge="1" parent="1" source="45RYCuC-ix0mDewOZhSB-39" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="45RYCuC-ix0mDewOZhSB-41" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-39" parent="1" style="whiteSpace=wrap;html=1;" value="AI Emotion Model" vertex="1">
+          <mxGeometry height="60" width="120" x="880" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-44" edge="1" parent="1" source="45RYCuC-ix0mDewOZhSB-41" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="45RYCuC-ix0mDewOZhSB-43" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-41" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Prediction Result" vertex="1">
+          <mxGeometry height="90" width="160" x="860" y="710" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-46" edge="1" parent="1" source="45RYCuC-ix0mDewOZhSB-43" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="45RYCuC-ix0mDewOZhSB-45" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-43" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Return JSON Response" vertex="1">
+          <mxGeometry height="100" width="170" x="855" y="830" as="geometry" />
+        </mxCell>
+        <mxCell id="45RYCuC-ix0mDewOZhSB-45" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="Save to Database" vertex="1">
+          <mxGeometry height="80" width="80" x="730" y="680" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

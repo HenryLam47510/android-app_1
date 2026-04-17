@@ -21,27 +21,27 @@
     },
     {
       "name": "camera",
-      "rootUri": "file:///C:/Users/hoang/AppData/Local/Pub/Cache/hosted/pub.dev/camera-0.10.6",
+      "rootUri": "file:///C:/Users/hoang/AppData/Local/Pub/Cache/hosted/pub.dev/camera-0.12.0+1",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.9"
     },
     {
-      "name": "camera_android",
-      "rootUri": "file:///C:/Users/hoang/AppData/Local/Pub/Cache/hosted/pub.dev/camera_android-0.10.10+16",
+      "name": "camera_android_camerax",
+      "rootUri": "file:///C:/Users/hoang/AppData/Local/Pub/Cache/hosted/pub.dev/camera_android_camerax-0.7.1+2",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "camera_avfoundation",
-      "rootUri": "file:///C:/Users/hoang/AppData/Local/Pub/Cache/hosted/pub.dev/camera_avfoundation-0.9.23+2",
+      "rootUri": "file:///C:/Users/hoang/AppData/Local/Pub/Cache/hosted/pub.dev/camera_avfoundation-0.10.1",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "camera_platform_interface",
-      "rootUri": "file:///C:/Users/hoang/AppData/Local/Pub/Cache/hosted/pub.dev/camera_platform_interface-2.12.0",
+      "rootUri": "file:///C:/Users/hoang/AppData/Local/Pub/Cache/hosted/pub.dev/camera_platform_interface-2.13.0",
       "packageUri": "lib/",
-      "languageVersion": "3.7"
+      "languageVersion": "3.9"
     },
     {
       "name": "camera_web",
@@ -111,7 +111,7 @@
     },
     {
       "name": "flutter",
-      "rootUri": "file:///C:/Program%20Files/flutter/packages/flutter",
+      "rootUri": "file:///D:/flutter/packages/flutter",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
@@ -129,13 +129,13 @@
     },
     {
       "name": "flutter_test",
-      "rootUri": "file:///C:/Program%20Files/flutter/packages/flutter_test",
+      "rootUri": "file:///D:/flutter/packages/flutter_test",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "flutter_web_plugins",
-      "rootUri": "file:///C:/Program%20Files/flutter/packages/flutter_web_plugins",
+      "rootUri": "file:///D:/flutter/packages/flutter_web_plugins",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
@@ -150,6 +150,18 @@
       "rootUri": "file:///C:/Users/hoang/AppData/Local/Pub/Cache/hosted/pub.dev/hooks-1.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.10"
+    },
+    {
+      "name": "http",
+      "rootUri": "file:///C:/Users/hoang/AppData/Local/Pub/Cache/hosted/pub.dev/http-1.6.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "http_parser",
+      "rootUri": "file:///C:/Users/hoang/AppData/Local/Pub/Cache/hosted/pub.dev/http_parser-4.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
     },
     {
       "name": "jni",
@@ -291,7 +303,7 @@
     },
     {
       "name": "sky_engine",
-      "rootUri": "file:///C:/Program%20Files/flutter/bin/cache/pkg/sky_engine",
+      "rootUri": "file:///D:/flutter/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
@@ -351,7 +363,7 @@
     },
     {
       "name": "vm_service",
-      "rootUri": "file:///C:/Users/hoang/AppData/Local/Pub/Cache/hosted/pub.dev/vm_service-15.0.2",
+      "rootUri": "file:///C:/Users/hoang/AppData/Local/Pub/Cache/hosted/pub.dev/vm_service-15.1.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
@@ -382,7 +394,7 @@
   ],
   "generator": "pub",
   "generatorVersion": "3.11.4",
-  "flutterRoot": "file:///C:/Program%20Files/flutter",
+  "flutterRoot": "file:///D:/flutter",
   "flutterVersion": "3.41.6",
   "pubCache": "file:///C:/Users/hoang/AppData/Local/Pub/Cache"
 }
