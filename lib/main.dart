@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'screens/auth_screen.dart';
 import 'screens/monitor_page.dart';
@@ -17,14 +16,6 @@ List<CameraDescription> _cameras = [];
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  try {
-    if (!kIsWeb) {
-      await Firebase.initializeApp();
-    }
-  } catch (e) {
-    print('Lỗi Firebase: $e');
-  }
   
   availableCameras().then((value) {
     _cameras = value;
@@ -79,12 +70,10 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _toggleMonitoring() async {
     if (_isMonitoring) {
-      // Dừng quay video
       final XFile? videoFile = await _controller?.stopVideoRecording();
       final DateTime endTime = DateTime.now();
       
       if (videoFile != null) {
-        // Xử lý lưu video ngầm để không treo UI
         _handleSavedVideo(videoFile.path, endTime);
       }
 
@@ -114,7 +103,6 @@ class _HomePageState extends State<HomePage> {
 
       try {
         await _controller!.initialize();
-        // Bắt đầu ghi video ngay sau khi khởi tạo
         await _controller!.startVideoRecording();
         _startTime = DateTime.now();
         
@@ -127,20 +115,14 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // Logic nén và lưu vào SQLite
   Future<void> _handleSavedVideo(String rawPath, DateTime endTime) async {
-    print("Video gốc đã lưu tại: $rawPath");
-    
-    // 1. Nén video để tiết kiệm dung lượng
     final String? compressedPath = await CompressionService.compressVideo(rawPath);
     final String finalPath = compressedPath ?? rawPath;
     
-    // 2. Tính thời lượng
     final int duration = _startTime != null 
         ? endTime.difference(_startTime!).inSeconds 
         : 0;
 
-    // 3. Lưu vào SQLite (Hàng đợi đồng bộ)
     await DatabaseService.instance.insertVideo(
       VideoSyncItem(
         filePath: finalPath,
@@ -148,8 +130,6 @@ class _HomePageState extends State<HomePage> {
         createdAt: _startTime ?? DateTime.now(),
       ),
     );
-
-    print("Đã đưa video vào hàng đợi đồng bộ.");
   }
 
   @override
