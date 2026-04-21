@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_state.dart';
+import '../models/user.dart';
+import '../admin/admin_dashboard_page.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -15,34 +17,60 @@ class _AuthScreenState extends State<AuthScreen> {
   final _nameController = TextEditingController();
 
   void _handleAuth() {
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
     if (_isLogin) {
-      if (_emailController.text == "admin@gmail.com" && _passwordController.text == "123456") {
+      // 1. Phân vai trò (Role) khi đăng nhập
+      if (email == "admin@gmail.com" && password == "123456") {
+        // Tài khoản ADMIN
+        currentUserNotifier.value = User(
+          name: "Administrator",
+          email: email,
+          avatar: "https://ui-avatars.com/api/?name=Admin&background=indigo&color=fff",
+        );
+        isLoggedInNotifier.value = true;
+        
+        // Điều hướng thẳng vào trang Admin Dashboard
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
+        );
+      } else if (email == "user@gmail.com" && password == "123456") {
+        // Tài khoản USER
+        currentUserNotifier.value = User(
+          name: "Người dùng Test",
+          email: email,
+          avatar: "https://ui-avatars.com/api/?name=User&background=blue&color=fff",
+        );
         isLoggedInNotifier.value = true;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Email hoặc mật khẩu không đúng!\nDemo: admin@gmail.com / 123456"),
+            content: Text("Email hoặc mật khẩu không đúng!\nAdmin: admin@gmail.com | User: user@gmail.com"),
             backgroundColor: Colors.redAccent,
           ),
         );
       }
     } else {
-      if (_emailController.text.isNotEmpty && _passwordController.text.isNotEmpty && _nameController.text.isNotEmpty) {
+      // Logic Đăng ký đơn giản
+      if (email.isNotEmpty && password.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Đăng ký thành công! Hãy đăng nhập.")),
         );
         setState(() => _isLogin = true);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Vui lòng điền đầy đủ thông tin")),
-        );
       }
     }
   }
 
-  void _useDemoAccount() {
-    _emailController.text = "admin@gmail.com";
-    _passwordController.text = "123456";
+  void _useDemoAccount(String type) {
+    if (type == 'admin') {
+      _emailController.text = "admin@gmail.com";
+      _passwordController.text = "123456";
+    } else {
+      _emailController.text = "user@gmail.com";
+      _passwordController.text = "123456";
+    }
     setState(() => _isLogin = true);
     _handleAuth();
   }
@@ -56,10 +84,10 @@ class _AuthScreenState extends State<AuthScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.auto_awesome, size: 80, color: Colors.indigo),
+            const Icon(Icons.auto_awesome, size: 80, color: Colors.blue),
             const SizedBox(height: 20),
             Text(
-              _isLogin ? "Chào mừng trở lại!" : "Tạo tài khoản mới",
+              _isLogin ? "Đăng nhập hệ thống" : "Tạo tài khoản mới",
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
@@ -81,7 +109,6 @@ class _AuthScreenState extends State<AuthScreen> {
                 labelText: "Email",
                 prefixIcon: Icon(Icons.email_outlined),
                 border: OutlineInputBorder(),
-                hintText: "admin@gmail.com",
               ),
             ),
             const SizedBox(height: 16),
@@ -92,32 +119,44 @@ class _AuthScreenState extends State<AuthScreen> {
                 labelText: "Mật khẩu",
                 prefixIcon: Icon(Icons.lock_outline),
                 border: OutlineInputBorder(),
-                hintText: "123456",
               ),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _handleAuth,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo,
+                backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(_isLogin ? "Đăng nhập" : "Đăng ký", style: const TextStyle(fontSize: 18)),
             ),
+            
             if (_isLogin) ...[
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _useDemoAccount,
-                icon: const Icon(Icons.account_circle),
-                label: const Text("Sử dụng tài khoản Demo"),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  side: const BorderSide(color: Colors.indigo),
-                ),
+              const SizedBox(height: 16),
+              const Center(child: Text("Sử dụng tài khoản Demo:", style: TextStyle(color: Colors.grey, fontSize: 12))),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => _useDemoAccount('user'),
+                      child: const Text("USER"),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => _useDemoAccount('admin'),
+                      style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.indigo)),
+                      child: const Text("ADMIN", style: TextStyle(color: Colors.indigo)),
+                    ),
+                  ),
+                ],
               ),
             ],
+            
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => setState(() => _isLogin = !_isLogin),

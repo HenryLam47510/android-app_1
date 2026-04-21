@@ -1,17 +1,31 @@
 class StudySession {
-  final String id;
-  final DateTime date;
-  final Duration duration;
-  final double avgFocusScore;
-  final String dominantEmotion;
-  final String videoPath;
+  final DateTime startTime;
+  final int duration;
+  final double happy;
+  final double neutral;
+  final double sad;
+  final double tired;
 
   StudySession({
-    required this.id,
-    required this.date,
+    required this.startTime,
     required this.duration,
-    required this.avgFocusScore,
-    required this.dominantEmotion,
-    required this.videoPath,
+    required this.happy,
+    required this.neutral,
+    required this.sad,
+    required this.tired,
   });
+
+  // Điểm tập trung ước tính (tỷ lệ Happy + Neutral)
+  double get avgFocusScore => (happy + neutral) / (happy + neutral + sad + tired);
+
+  // Xác định cảm xúc xuất hiện nhiều nhất
+  String get dominantEmotion {
+    var emotions = {
+      'Hứng thú': happy,
+      'Tập trung': neutral,
+      'Buồn chán': sad,
+      'Mệt mỏi': tired,
+    };
+    return emotions.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+  }
 }
