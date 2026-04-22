@@ -1,10 +1,11 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
-import '../models/database_service.dart'; // Sửa đường dẫn import
-import '../models/video_sync_item.dart';
+import '../../models/video_sync_item.dart';
+import 'database_service.dart';
 
 class SyncService {
-  final Dio _dio = Dio(BaseOptions(baseUrl: "https://your-backend-api.com/api"));
+  final Dio _dio = Dio(
+    BaseOptions(baseUrl: "https://your-backend-api.com/api"),
+  );
   final DatabaseService _db = DatabaseService.instance;
 
   // Hàm thực hiện đồng bộ toàn bộ video chưa sync
@@ -35,9 +36,9 @@ class SyncService {
           // 4. Cập nhật trạng thái thành công
           final serverId = response.data['id']?.toString();
           await _db.updateVideoStatus(
-            video.id!, 
-            SyncStatus.synced, 
-            serverId: serverId
+            video.id!,
+            SyncStatus.synced,
+            serverId: serverId,
           );
           print("Sync thành công video: ${video.id}");
         } else {

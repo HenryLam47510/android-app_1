@@ -10,15 +10,16 @@ class CompressionService {
     try {
       final Directory tempDir = await getTemporaryDirectory();
       final String outputPath = p.join(
-        tempDir.path, 
-        "compressed_${DateTime.now().millisecondsSinceEpoch}.mp4"
+        tempDir.path,
+        "compressed_${DateTime.now().millisecondsSinceEpoch}.mp4",
       );
 
       // Lệnh nén H.264 CRF 28 chuẩn YouTube/TikTok
-      final String ffmpegCommand = "-i $inputPath -vcodec libx264 -crf 28 -preset fast $outputPath";
+      final String ffmpegCommand =
+          "-i $inputPath -vcodec libx264 -crf 28 -preset fast $outputPath";
 
       print("Bắt đầu nén video: $inputPath");
-      
+
       final session = await FFmpegKit.execute(ffmpegCommand);
       final returnCode = await session.getReturnCode();
 
@@ -39,13 +40,16 @@ class CompressionService {
   static Future<String?> convertToHls(String inputPath) async {
     try {
       final Directory appDir = await getApplicationDocumentsDirectory();
-      final String hlsFolder = p.join(appDir.path, "hls_${DateTime.now().millisecondsSinceEpoch}");
+      final String hlsFolder = p.join(
+        appDir.path,
+        "hls_${DateTime.now().millisecondsSinceEpoch}",
+      );
       await Directory(hlsFolder).create(recursive: true);
-      
+
       final String outputPath = p.join(hlsFolder, "index.m3u8");
 
       // Cắt video thành mỗi đoạn 10 giây
-      final String ffmpegCommand = 
+      final String ffmpegCommand =
           "-i $inputPath -hls_time 10 -hls_list_size 0 -f hls $outputPath";
 
       final session = await FFmpegKit.execute(ffmpegCommand);

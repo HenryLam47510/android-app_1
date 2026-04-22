@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../constants/app_state.dart';
-import '../models/user.dart';
+import '/constants/app_state.dart';
+import '../profile/user.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -11,7 +11,7 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
-  
+
   late TextEditingController nameController;
   late TextEditingController emailController;
   late TextEditingController avatarController;
@@ -40,7 +40,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         email: emailController.text,
         avatar: avatarController.text,
       );
-      
+
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Thông tin đã được cập nhật!")),
@@ -62,19 +62,28 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundImage: NetworkImage(avatarController.text.isNotEmpty 
-                      ? avatarController.text 
-                      : "https://ui-avatars.com/api/?name=${nameController.text}"),
+                    backgroundImage: NetworkImage(
+                      avatarController.text.isNotEmpty
+                          ? avatarController.text
+                          : "https://ui-avatars.com/api/?name=${nameController.text}",
+                    ),
                   ),
                   Positioned(
                     bottom: 0,
                     right: 0,
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                      decoration: const BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
-                  )
+                  ),
                 ],
               ),
               const SizedBox(height: 32),
@@ -85,7 +94,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.person_outline),
                 ),
-                validator: (value) => (value == null || value.isEmpty) ? "Vui lòng nhập tên" : null,
+                validator: (value) => (value == null || value.isEmpty)
+                    ? "Vui lòng nhập tên"
+                    : null,
               ),
               const SizedBox(height: 20),
               TextFormField(
@@ -95,7 +106,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.email_outlined),
                 ),
-                validator: (value) => (value == null || !value.contains("@")) ? "Email không hợp lệ" : null,
+                validator: (value) => (value == null || !value.contains("@"))
+                    ? "Email không hợp lệ"
+                    : null,
               ),
               const SizedBox(height: 20),
               TextFormField(
@@ -105,7 +118,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.image_outlined),
                 ),
-                onChanged: (value) => setState(() {}), // Để cập nhật ảnh preview phía trên
+                onChanged: (value) =>
+                    setState(() {}), // Để cập nhật ảnh preview phía trên
               ),
               const SizedBox(height: 40),
               SizedBox(
@@ -116,9 +130,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text("Lưu thay đổi", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "Lưu thay đổi",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],

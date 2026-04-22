@@ -229,6 +229,21 @@ class StudySession {
     return Colors.red;
   }
 
+  /// Phân bố cảm xúc (tỉ lệ phần trăm) - dùng cho chart/UI
+  /// Ví dụ: {'natural': 0.7, 'happy': 0.2, 'sad': 0.1}
+  Map<String, double> get emotionDistribution {
+    final total = emotionFrequency.values.fold<int>(
+      0,
+      (sum, count) => sum + count,
+    );
+
+    if (total == 0) return {};
+
+    return emotionFrequency.map(
+      (emotion, count) => MapEntry(emotion, count / total),
+    );
+  }
+
   /// Convert to JSON
   Map<String, dynamic> toJson() {
     return {

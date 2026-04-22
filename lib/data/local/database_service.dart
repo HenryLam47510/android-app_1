@@ -1,6 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'video_sync_item.dart';
+import '../../models/video_sync_item.dart';
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
@@ -18,11 +18,7 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _createDB,
-    );
+    return await openDatabase(path, version: 1, onCreate: _createDB);
   }
 
   Future _createDB(Database db, int version) async {
@@ -53,17 +49,16 @@ class DatabaseService {
     return result.map((json) => VideoSyncItem.fromMap(json)).toList();
   }
 
-  Future<int> updateVideoStatus(int id, SyncStatus status, {String? serverId}) async {
+  Future<int> updateVideoStatus(
+    int id,
+    SyncStatus status, {
+    String? serverId,
+  }) async {
     final db = await instance.database;
     final Map<String, dynamic> values = {'syncStatus': status.name};
     if (serverId != null) values['serverId'] = serverId;
-    
-    return await db.update(
-      'videos',
-      values,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+
+    return await db.update('videos', values, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<int> deleteVideo(int id) async {

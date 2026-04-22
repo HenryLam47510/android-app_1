@@ -1,28 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'screens/auth_screen.dart';
-import 'screens/monitor_page.dart';
-import 'screens/history_page.dart';
-import 'screens/notification_page.dart';
-import 'screens/profile_page.dart';
-import 'widgets/value_listenable_builder_2.dart';
+import 'features/home/auth_screen.dart';
+import 'features/home/monitor_page.dart';
+import 'features/home/history_page.dart';
+import 'features/home/notification_page.dart';
+import 'features/profile/profile_page.dart';
+import 'features/home/value_listenable_builder_2.dart';
 import 'constants/app_state.dart';
 import 'package:camera/camera.dart';
-import 'models/database_service.dart';
+import 'data/local/database_service.dart';
 import 'models/video_sync_item.dart';
-import 'api/compression_service.dart';
+import 'data/local/compression_service.dart';
 
 List<CameraDescription> _cameras = [];
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  availableCameras().then((value) {
-    _cameras = value;
-  }).catchError((e) {
-    print('Lỗi khởi tạo camera: $e');
-  });
-  
+
+  availableCameras()
+      .then((value) {
+        _cameras = value;
+      })
+      .catchError((e) {
+        print('Lỗi khởi tạo camera: $e');
+      });
+
   runApp(const MyApp());
 }
 
@@ -40,11 +42,17 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
             primarySwatch: Colors.blue,
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.light),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.blue,
+              brightness: Brightness.light,
+            ),
             useMaterial3: true,
           ),
           darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.blue,
+              brightness: Brightness.dark,
+            ),
             useMaterial3: true,
           ),
           themeMode: currentMode,
@@ -72,7 +80,7 @@ class _HomePageState extends State<HomePage> {
     if (_isMonitoring) {
       final XFile? videoFile = await _controller?.stopVideoRecording();
       final DateTime endTime = DateTime.now();
-      
+
       if (videoFile != null) {
         _handleSavedVideo(videoFile.path, endTime);
       }
@@ -84,7 +92,9 @@ class _HomePageState extends State<HomePage> {
       });
     } else {
       if (_cameras.isEmpty) {
-        try { _cameras = await availableCameras(); } catch (_) {}
+        try {
+          _cameras = await availableCameras();
+        } catch (_) {}
         if (_cameras.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Không tìm thấy thiết bị camera")),
@@ -92,7 +102,7 @@ class _HomePageState extends State<HomePage> {
           return;
         }
       }
-      
+
       _controller = CameraController(
         _cameras.firstWhere(
           (camera) => camera.lensDirection == CameraLensDirection.front,
@@ -105,7 +115,7 @@ class _HomePageState extends State<HomePage> {
         await _controller!.initialize();
         await _controller!.startVideoRecording();
         _startTime = DateTime.now();
-        
+
         setState(() {
           _isMonitoring = true;
         });
@@ -116,11 +126,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _handleSavedVideo(String rawPath, DateTime endTime) async {
-    final String? compressedPath = await CompressionService.compressVideo(rawPath);
+    final String? compressedPath = await CompressionService.compressVideo(
+      rawPath,
+    );
     final String finalPath = compressedPath ?? rawPath;
-    
-    final int duration = _startTime != null 
-        ? endTime.difference(_startTime!).inSeconds 
+
+    final int duration = _startTime != null
+        ? endTime.difference(_startTime!).inSeconds
         : 0;
 
     await DatabaseService.instance.insertVideo(
@@ -142,7 +154,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       MonitorPage(
-        isMonitoring: _isMonitoring, 
+        isMonitoring: _isMonitoring,
         controller: _controller,
         onToggle: _toggleMonitoring,
       ),
@@ -174,8 +186,8 @@ class _HomePageState extends State<HomePage> {
     final isSelected = _selectedIndex == index;
     return IconButton(
       icon: Icon(
-        isSelected ? activeIcon : inactiveIcon, 
-        color: isSelected ? Colors.blue : Colors.grey
+        isSelected ? activeIcon : inactiveIcon,
+        color: isSelected ? Colors.blue : Colors.grey,
       ),
       onPressed: () => setState(() => _selectedIndex = index),
     );

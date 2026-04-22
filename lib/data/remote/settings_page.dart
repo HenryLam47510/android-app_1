@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../constants/app_state.dart';
-import 'change_password_page.dart';
-import 'help_center_page.dart';
+import '../../features/profile/change_password_page.dart';
+import '../../features/profile/help_center_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -15,7 +14,6 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _enableNotifications = true;
   bool _studyReminders = true;
   bool _biometricLogin = false;
-  bool _autoStartCamera = false;
 
   void _showDeleteHistoryDialog() {
     showDialog(

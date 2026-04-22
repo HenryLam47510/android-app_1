@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import '../api/api_service.dart';
+import '../../data/remote/api_service.dart';
 
 class MonitorPage extends StatefulWidget {
   final bool isMonitoring;
@@ -55,8 +55,9 @@ class _MonitorPageState extends State<MonitorPage> {
   }
 
   Future<void> _runAIPrediction() async {
-    if (widget.controller == null || !widget.controller!.value.isInitialized)
+    if (widget.controller == null || !widget.controller!.value.isInitialized) {
       return;
+    }
 
     try {
       // 1. Chụp ảnh màn hình từ camera (ngầm)

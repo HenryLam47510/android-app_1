@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../api/api_service.dart';
+import '../../data/remote/api_service.dart';
 import '../../constants/app_state.dart';
+import '../home/auth_screen.dart'; // Import để chuyển hướng khi đăng xuất
 import 'admin_video_list_page.dart';
 
 class AdminDashboardPage extends StatelessWidget {
@@ -17,37 +18,7 @@ class AdminDashboardPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: "Đăng xuất",
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text("Đăng xuất"),
-                  content: const Text(
-                    "Bạn có chắc chắn muốn thoát quyền Admin?",
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text("Hủy"),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        // Cập nhật trạng thái đăng xuất
-                        isLoggedInNotifier.value = false;
-                        // Quay về màn hình gốc (AuthScreen sẽ tự hiển thị do isLoggedInNotifier thay đổi)
-                        Navigator.of(
-                          context,
-                        ).popUntil((route) => route.isFirst);
-                      },
-                      child: const Text(
-                        "Đăng xuất",
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+            onPressed: () => _showLogoutDialog(context),
           ),
         ],
       ),
@@ -134,10 +105,57 @@ class AdminDashboardPage extends StatelessWidget {
                     _showSettingsDialog(context);
                   },
                 ),
+                const SizedBox(height: 24),
+                _buildMenuTile(
+                  context,
+                  "Đăng xuất",
+                  "Thoát khỏi tài khoản Giáo viên",
+                  Icons.logout_rounded,
+                  () => _showLogoutDialog(context),
+                  color: Colors.redAccent,
+                ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Xác nhận đăng xuất"),
+        content: const Text(
+          "Thầy/Cô có chắc chắn muốn thoát khỏi hệ thống quản trị không?",
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Hủy"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // Cập nhật trạng thái
+              isLoggedInNotifier.value = false;
+              // Xóa toàn bộ stack và quay về màn hình đăng nhập
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const AuthScreen()),
+                (route) => false,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text("Đăng xuất"),
+          ),
+        ],
       ),
     );
   }
@@ -227,13 +245,14 @@ class AdminDashboardPage extends StatelessWidget {
     String title,
     String sub,
     IconData icon,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    Color? color,
+  }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
-        leading: Icon(icon, color: Colors.indigo, size: 28),
+        leading: Icon(icon, color: color ?? Colors.indigo, size: 28),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(sub, style: const TextStyle(fontSize: 12)),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),

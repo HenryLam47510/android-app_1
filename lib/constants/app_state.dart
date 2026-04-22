@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/user.dart';
+import '/features/profile/user.dart';
 
 // Quản lý trạng thái Theme toàn cục
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);

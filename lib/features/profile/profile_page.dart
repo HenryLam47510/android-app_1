@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../constants/app_state.dart';
-import '../models/user.dart';
+import '/constants/app_state.dart';
+import '/features/profile/user.dart';
 import 'edit_profile_page.dart';
 import 'change_password_page.dart';
 import 'help_center_page.dart';
-import 'settings_page.dart';
-import 'admin_dashboard_page.dart'; // Import trang Admin
+import '/data/remote/settings_page.dart';
+import '../admin/admin_dashboard_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});

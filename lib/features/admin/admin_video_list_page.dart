@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../api/api_service.dart';
-import '../models/admin_video.dart';
+import '../../data/remote/api_service.dart';
+import '../../models/admin_video.dart';
 import 'admin_video_detail_page.dart';
 
 class AdminVideoListPage extends StatefulWidget {
@@ -51,15 +51,33 @@ class _AdminVideoListPageState extends State<AdminVideoListPage> {
             itemBuilder: (context, index) {
               final video = videos[index];
               return Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: ListTile(
-                  leading: const Icon(Icons.video_collection, color: Colors.blue),
-                  title: Text(video.filename, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                  subtitle: Text("${video.duration.inMinutes} phút • ${video.createdAt.day}/${video.createdAt.month}"),
+                  leading: const Icon(
+                    Icons.video_collection,
+                    color: Colors.blue,
+                  ),
+                  title: Text(
+                    video.filename,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: Text(
+                    "${video.duration.inMinutes} phút • ${video.createdAt.day}/${video.createdAt.month}",
+                  ),
                   trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: video.status == "processed" ? Colors.green : Colors.orange,
+                      color: video.status == "processed"
+                          ? Colors.green
+                          : Colors.orange,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -69,7 +87,9 @@ class _AdminVideoListPageState extends State<AdminVideoListPage> {
                   ),
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => AdminVideoDetailPage(video: video)),
+                    MaterialPageRoute(
+                      builder: (_) => AdminVideoDetailPage(video: video),
+                    ),
                   ),
                 ),
               );

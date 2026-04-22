@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/study_session.dart';
-import '../api/api_service.dart';
+import '../study/study_session.dart';
+import '../../data/remote/api_service.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});

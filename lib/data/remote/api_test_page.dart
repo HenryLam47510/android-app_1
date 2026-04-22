@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/post.dart';
-import '../api/api_service.dart'; // Cập nhật import sang folder api
+import '../../models/post.dart';
+import './api_service.dart'; // Cập nhật import sang folder data/remote
 
 class ApiTestPage extends StatefulWidget {
   const ApiTestPage({super.key});
@@ -39,8 +39,16 @@ class _ApiTestPageState extends State<ApiTestPage> {
               Post post = snapshot.data![index];
               return ListTile(
                 leading: CircleAvatar(child: Text(post.id.toString())),
-                title: Text(post.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                subtitle: Text(post.body, maxLines: 2, overflow: TextOverflow.ellipsis),
+                title: Text(
+                  post.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  post.body,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               );
             },
           );

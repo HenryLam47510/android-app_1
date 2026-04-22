@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../constants/app_state.dart';
-import '../models/user.dart';
+import '../../constants/app_state.dart';
+import '../../features/profile/user.dart';
 import '../admin/admin_dashboard_page.dart';
 
 class AuthScreen extends StatefulWidget {
