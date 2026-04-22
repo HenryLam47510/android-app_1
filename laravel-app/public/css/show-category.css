@@ -1,0 +1,36 @@
+body {
+    background-color: #f5f5f5; /* Xám nhạt */
+}
+
+.container {
+    background-color: #ffffff; /* Trắng đậm hơn */
+    border-radius: 10px; /* Bo tròn nhẹ */
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Hiệu ứng bóng nhẹ */
+}
+.dropdown-menu {
+    background-color: #444444 !important; /* Màu nền dropdown */
+    color: #cdc3c3 !important; /* Màu chữ */
+    border: 1px solid #ccc; /* Viền dropdown */
+}
+
+.dropdown-item {
+    color: #f0e9e9 !important; /* Màu chữ của item */
+}
+
+.dropdown-item:hover {
+    background-color: #f76c6c !important; /* Màu nền khi hover */
+}
+.product-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.product-body {
+    flex-grow: 1;
+}
+
+.product-footer {
+    margin-top: auto; /* Đẩy nút xuống dưới cùng */
+}

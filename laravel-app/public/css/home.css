@@ -1,0 +1,40 @@
+.container {
+    background-color: #ffffff; /* Trắng đậm hơn */
+    border-radius: 10px; /* Bo tròn nhẹ */
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Hiệu ứng bóng nhẹ */
+}
+.dropdown-menu {
+    background-color: #444444 !important; /* Màu nền dropdown */
+    color: #cdc3c3 !important; /* Màu chữ */
+    border: 1px solid #ccc; /* Viền dropdown */
+}
+
+.dropdown-item {
+    color: #f0e9e9 !important; /* Màu chữ của item */
+}
+
+.dropdown-item:hover {
+    background-color: #f76c6c !important; /* Màu nền khi hover */
+}
+.product-card {
+    display: grid;
+    grid-template-rows: auto 1fr auto; /* Tự động chia phần trên - giữa - dưới */
+    height: 100%;
+    width:100%;
+    height: 200px;
+    object-position: center;
+    object-fit: contain;
+}
+
+.product-button {
+    align-self: end; /* Đẩy nút xuống dưới */
+}
+.product-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Giới hạn tối đa 2 dòng */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+

@@ -1,0 +1,242 @@
+/* Tổng thể */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: #f4f4f4;
+}
+
+/* Header */
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: #29324e;
+    color: white;
+    
+}
+
+
+/* Phần người dùng và menu */
+.user-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+/* Giỏ hàng */
+.cart-info {
+    margin-left: 15px;
+}
+
+.cart-btn {
+    display: flex;
+    align-items: center;
+    background-color: #f76c6c;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    font-size: 14px;
+    position: relative;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+}
+
+.cart-btn:hover {
+    background-color: #f55a5a;
+}
+
+.cart-btn .cart-count {
+    background-color: #fff;
+    color: #f76c6c;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    text-align: center;
+    line-height: 20px;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+}
+
+/* Dropdown Menu */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: #444444;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    width: 200px;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Hiển thị dropdown khi có class 'show' */
+.dropdown-menu {
+    display: none;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.dropdown-menu.show {
+    display: block !important;
+    opacity: 1;
+    transform: translateY(0);
+}
+.dropdown.show .dropdown-menu {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dropdown-menu .dropdown-item {
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    display: block;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.dropdown-menu .dropdown-item:hover {
+    background-color: #f76c6c;
+    cursor: pointer;
+}
+
+/* Cải thiện button tài khoản */
+.btn-light, .btn-primary {
+    background-color: #f76c6c;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+}
+
+.btn-light:hover, .btn-primary:hover {
+    background-color: #f55a5a;
+}
+
+/* Căn chỉnh icon dropdown */
+.btn-light::after {
+    content: " ▼";
+    font-size: 12px;
+}
+
+
+/* Thanh tìm kiếm */
+.header-top .search-bar input {
+    padding: 10px;
+    width: 300px;
+    border: none;
+    border-radius: 5px;
+}
+
+.header-top .search-bar button {
+    padding: 10px;
+    background-color: #f76c6c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.header-top .logo a{
+    text-decoration: none;
+    color: wheat;
+    font-size: 40px;
+}
+
+/* Navigation Menu */
+.nav-menu {
+    background-color: #29324e;
+    padding: 10px 10px;
+}
+
+.nav-menu ul {
+    display: flex;
+    justify-content: center;
+    list-style-type: none;
+}
+
+.nav-menu li {
+    margin: 0 15px;
+    display: flex;
+    align-items: center;
+}
+
+.nav-menu li a {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 1.2em;
+}
+
+.nav-menu li a:hover {
+    color: #f76c6c;
+}
+
+/* Dropdown ổ cứng */
+.nav-menu .dropdown-ocung {
+    position: relative;
+}
+
+.nav-menu .dropdown-toggle-ocung {
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.nav-menu .dropdown-menu-ocung {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-width: 150px;
+    z-index: 1000;
+}
+
+.nav-menu .dropdown-menu-ocung li {
+    padding: 10px;
+    text-align: center;
+}
+
+.nav-menu .dropdown-menu-ocung li a {
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    display: block;
+}
+
+/* Hover effect for dropdown menu */
+.nav-menu .dropdown-ocung:hover .dropdown-menu-ocung {
+    display: block;
+}
+
+.nav-menu .dropdown-menu-ocung li:hover {
+    background-color: #f1f1f1;
+}
+

@@ -1,0 +1,47 @@
+/* Tổng thể */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: #f4f4f4;
+}
+
+
+
+/* Slideshow */
+.slideshow {
+    max-width: 100%;
+    position: relative;
+    margin: auto;
+}
+
+.slide-container {
+    position: relative;
+    overflow: hidden;
+}
+
+.slide {
+    display: none;
+}
+
+img {
+    width: 100%;
+    height: auto;
+}
+
+.fade {
+    animation: fade 3s ease-in-out infinite;
+}
+
+@keyframes fade {
+    0% { opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+

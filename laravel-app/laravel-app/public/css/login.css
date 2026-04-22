@@ -1,0 +1,75 @@
+/* CSS cho trang đăng nhập */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.login-container {
+    width: 400px;
+    margin: 100px auto;
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+p {
+    text-align: center;
+}
+p a {
+    text-decoration: none;
+}
+p a:hover{
+    text-decoration: underline;
+    color: red
+}
+button:hover {
+    background-color: #45a049;
+}
+
+/* Thông báo lỗi */
+.error-message {
+    color: #ff0000;
+    margin-bottom: 20px;
+}
+
+.error-message ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.error-message li {
+    font-size: 14px;
+}

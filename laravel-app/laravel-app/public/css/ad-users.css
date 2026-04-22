@@ -1,0 +1,13 @@
+.dropdown-menu {
+    background-color: #444444 !important; /* Màu nền dropdown */
+    color: #cdc3c3 !important; /* Màu chữ */
+    border: 1px solid #ccc; /* Viền dropdown */
+}
+
+.dropdown-item {
+    color: #f0e9e9 !important; /* Màu chữ của item */
+}
+
+.dropdown-item:hover {
+    background-color: #f76c6c !important; /* Màu nền khi hover */
+}

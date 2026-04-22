@@ -1,0 +1,98 @@
+/* Tổng thể */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+/* Container chính */
+.login-container {
+    width: 400px;
+    margin: 100px auto;
+    padding: 30px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Tiêu đề */
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #333;
+}
+h3 {
+    text-align: center;
+}
+
+/* Các trường nhập liệu */
+label {
+    font-size: 14px;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+input:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+/* Nút đăng ký */
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* Liên kết */
+p {
+    text-align: center;
+    margin-top: 10px;
+}
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    color: #ff0000;
+    text-decoration: underline;
+}
+
+/* Thông báo lỗi */
+.error-message {
+    color: #ff0000;
+    margin-bottom: 20px;
+}
+
+.error-message ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.error-message li {
+    font-size: 14px;
+}
