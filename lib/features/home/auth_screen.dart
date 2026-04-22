@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_state.dart';
+import '../../data/remote/api_service.dart';
 import '../../features/profile/user.dart';
 import '../admin/admin_dashboard_page.dart';
 
@@ -16,51 +17,63 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
 
-  void _handleAuth() {
+  Future<void> _handleAuth() async {
     final email = _emailController.text;
     final password = _passwordController.text;
 
     if (_isLogin) {
-      // Logic đăng nhập cho Giáo viên (Admin)
-      if (email == "admin@gmail.com" && password == "123456") {
+      try {
+        final user = await ApiService.login(email, password);
         currentUserNotifier.value = User(
-          name: "Thầy Nguyễn Văn A",
-          email: email,
-          avatar:
-              "https://ui-avatars.com/api/?name=Teacher&background=3F51B5&color=fff",
+          name: user['name'] ?? 'Người dùng',
+          email: user['email'] ?? email,
+          avatar: user['role'] == 'admin'
+              ? 'https://ui-avatars.com/api/?name=Teacher&background=3F51B5&color=fff'
+              : 'https://ui-avatars.com/api/?name=Student&background=03A9F4&color=fff',
         );
         isLoggedInNotifier.value = true;
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
-        );
-      }
-      // Logic đăng nhập cho Học sinh (User)
-      else if (email == "user@gmail.com" && password == "123456") {
-        currentUserNotifier.value = User(
-          name: "Em Học Sinh",
-          email: email,
-          avatar:
-              "https://ui-avatars.com/api/?name=Student&background=03A9F4&color=fff",
-        );
-        isLoggedInNotifier.value = true;
-      } else {
+        if (user['role'] == 'admin') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
+          );
+        }
+      } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Thông tin đăng nhập chưa đúng rồi!"),
+          SnackBar(
+            content: Text('Đăng nhập thất bại: ${e.toString()}'),
             backgroundColor: Colors.redAccent,
           ),
         );
       }
     } else {
-      if (email.isNotEmpty && password.isNotEmpty) {
+      final name = _nameController.text;
+      if (name.isEmpty || email.isEmpty || password.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Đăng ký tài khoản học sinh thành công! ✨"),
+            content: Text('Vui lòng điền đầy đủ thông tin đăng ký'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        return;
+      }
+
+      try {
+        await ApiService.register(name, email, password);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đăng ký tài khoản học sinh thành công! ✨'),
           ),
         );
         setState(() => _isLogin = true);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đăng ký thất bại: ${e.toString()}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
       }
     }
   }

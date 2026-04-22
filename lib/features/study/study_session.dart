@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 
 /// Mapping cảm xúc → mức độ tập trung
@@ -248,31 +247,42 @@ class StudySession {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'startTime': startTime.toIso8601String(),
-      'endTime': endTime?.toIso8601String(),
+      'start_time': startTime.toIso8601String(),
+      'end_time': endTime?.toIso8601String(),
       'duration': duration,
-      'avgFocusScore': avgFocusScore,
-      'dominantEmotion': dominantEmotion,
-      'emotionFrequency': emotionFrequency,
+      'avg_focus_score': avgFocusScore,
+      'dominant_emotion': dominantEmotion,
+      'emotion_frequency': emotionFrequency,
       'videoPath': videoPath,
       'totalFrames': totalFrames,
     };
   }
 
-  /// Create from JSON
   factory StudySession.fromJson(Map<String, dynamic> json) {
     return StudySession(
-      id: json['id'] ?? '',
-      startTime: DateTime.parse(
-        json['startTime'] ?? DateTime.now().toIso8601String(),
-      ),
-      endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
-      duration: json['duration'] ?? 0,
-      avgFocusScore: (json['avgFocusScore'] as num?)?.toDouble() ?? 0.0,
-      dominantEmotion: json['dominantEmotion'] ?? 'unknown',
-      emotionFrequency: Map<String, int>.from(json['emotionFrequency'] ?? {}),
-      videoPath: json['videoPath'],
-      totalFrames: json['totalFrames'] ?? 0,
+      id: json['id'].toString(),
+      startTime: DateTime.parse(json['start_time'] ?? json['startTime']),
+      endTime: json['end_time'] != null
+          ? DateTime.parse(json['end_time'])
+          : null,
+      duration: json['duration'] is int
+          ? json['duration']
+          : int.tryParse(json['duration'].toString()) ?? 0,
+      avgFocusScore: (json['avg_focus_score'] ?? json['avgFocusScore'] ?? 0.0)
+          .toDouble(),
+      dominantEmotion:
+          json['dominant_emotion'] ?? json['dominantEmotion'] ?? 'unknown',
+      emotionFrequency: json['emotion_frequency'] != null
+          ? Map<String, int>.from(json['emotion_frequency'])
+          : {},
+      videoPath: json['videoPath'] ?? json['video_path'],
+      totalFrames: json['totalFrames'] != null
+          ? (json['totalFrames'] is int
+                ? json['totalFrames']
+                : int.tryParse(json['totalFrames'].toString()) ?? 0)
+          : 0,
     );
   }
+
+  /// Create from JSON
 }

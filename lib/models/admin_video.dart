@@ -18,6 +18,19 @@ class AdminVideo {
     required this.segments,
     required this.aiResults,
   });
+
+  factory AdminVideo.fromJson(Map<String, dynamic> json) {
+    return AdminVideo(
+      id: json['id'].toString(),
+      filename: json['file_path'] ?? json['filename'] ?? '',
+      duration: Duration(seconds: (json['duration'] ?? 0) as int),
+      createdAt: DateTime.parse(json['created_at']),
+      status: json['status'] ?? 'unknown',
+      videoUrl: json['file_path'] ?? '',
+      segments: [],
+      aiResults: [],
+    );
+  }
 }
 
 class VideoSegment {
