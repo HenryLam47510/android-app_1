@@ -21,50 +21,52 @@ class _AuthScreenState extends State<AuthScreen> {
     final password = _passwordController.text;
 
     if (_isLogin) {
-      // 1. Phân vai trò (Role) khi đăng nhập
+      // Logic đăng nhập cho Giáo viên (Admin)
       if (email == "admin@gmail.com" && password == "123456") {
-        // Tài khoản ADMIN
         currentUserNotifier.value = User(
-          name: "Administrator",
+          name: "Thầy Nguyễn Văn A",
           email: email,
-          avatar: "https://ui-avatars.com/api/?name=Admin&background=indigo&color=fff",
+          avatar:
+              "https://ui-avatars.com/api/?name=Teacher&background=3F51B5&color=fff",
         );
         isLoggedInNotifier.value = true;
-        
-        // Điều hướng thẳng vào trang Admin Dashboard
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
         );
-      } else if (email == "user@gmail.com" && password == "123456") {
-        // Tài khoản USER
+      }
+      // Logic đăng nhập cho Học sinh (User)
+      else if (email == "user@gmail.com" && password == "123456") {
         currentUserNotifier.value = User(
-          name: "Người dùng Test",
+          name: "Em Học Sinh",
           email: email,
-          avatar: "https://ui-avatars.com/api/?name=User&background=blue&color=fff",
+          avatar:
+              "https://ui-avatars.com/api/?name=Student&background=03A9F4&color=fff",
         );
         isLoggedInNotifier.value = true;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Email hoặc mật khẩu không đúng!\nAdmin: admin@gmail.com | User: user@gmail.com"),
+            content: Text("Thông tin đăng nhập chưa đúng rồi!"),
             backgroundColor: Colors.redAccent,
           ),
         );
       }
     } else {
-      // Logic Đăng ký đơn giản
       if (email.isNotEmpty && password.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Đăng ký thành công! Hãy đăng nhập.")),
+          const SnackBar(
+            content: Text("Đăng ký tài khoản học sinh thành công! ✨"),
+          ),
         );
         setState(() => _isLogin = true);
       }
     }
   }
 
-  void _useDemoAccount(String type) {
-    if (type == 'admin') {
+  void _useDemoAccount(String role) {
+    if (role == 'admin') {
       _emailController.text = "admin@gmail.com";
       _passwordController.text = "123456";
     } else {
@@ -78,92 +80,239 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Icon(Icons.auto_awesome, size: 80, color: Colors.blue),
-            const SizedBox(height: 20),
-            Text(
-              _isLogin ? "Đăng nhập hệ thống" : "Tạo tài khoản mới",
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 40),
-            if (!_isLogin) ...[
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: "Họ và tên",
-                  prefixIcon: Icon(Icons.person_outline),
-                  border: OutlineInputBorder(),
+      backgroundColor: Colors.blueGrey[50], // Nền trung tính sạch sẽ
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.lightBlue[100]!,
+              Colors.white,
+            ], // Màu xanh nhẹ cho học sinh
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 40),
+              // Logo Trường Học với icon vui hơn
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+                ),
+                child: const Icon(
+                  Icons.school_rounded,
+                  size: 80,
+                  color: Colors.lightBlue, // Màu xanh cho học sinh
                 ),
               ),
-              const SizedBox(height: 16),
-            ],
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: "Email",
-                prefixIcon: Icon(Icons.email_outlined),
-                border: OutlineInputBorder(),
+              const SizedBox(height: 20),
+              const Text(
+                "CỔNG HỌC TẬP THÔNG MINH",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24, // Lớn hơn cho dễ đọc
+                  fontWeight: FontWeight.w900,
+                  color: Colors.lightBlue, // Màu xanh
+                  letterSpacing: 1.2,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: "Mật khẩu",
-                prefixIcon: Icon(Icons.lock_outline),
-                border: OutlineInputBorder(),
+              const Text(
+                "Chắp cánh ước mơ học đường",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16, // Lớn hơn
+                  color: Colors.blueGrey,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _handleAuth,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              const SizedBox(height: 40),
+
+              // Form Nhập liệu với style đơn giản hơn
+              Card(
+                elevation: 6, // Tăng elevation
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Text(
+                        _isLogin ? "ĐĂNG NHẬP" : "ĐĂNG KÝ HỌC VIÊN",
+                        style: const TextStyle(
+                          fontSize: 20, // Lớn hơn
+                          fontWeight: FontWeight.bold,
+                          color: Colors.lightBlue, // Màu xanh
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      if (!_isLogin) ...[
+                        _buildTextField(
+                          _nameController,
+                          "Họ và tên em",
+                          Icons.person_outline,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      _buildTextField(
+                        _emailController,
+                        "Tên tài khoản / Email",
+                        Icons.account_circle_outlined,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        _passwordController,
+                        "Mật khẩu",
+                        Icons.lock_outline,
+                        isPassword: true,
+                      ),
+                      const SizedBox(height: 30),
+
+                      // Nút hành động chính với style vui hơn
+                      SizedBox(
+                        width: double.infinity,
+                        height: 60, // Lớn hơn
+                        child: ElevatedButton(
+                          onPressed: _handleAuth,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Colors.lightBlue, // Màu xanh cho học sinh
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            elevation: 4, // Tăng elevation
+                            shadowColor: Colors.lightBlue.withOpacity(0.3),
+                          ),
+                          child: Text(
+                            _isLogin ? "VÀO LỚP NGAY" : "XÁC NHẬN ĐĂNG KÝ",
+                            style: const TextStyle(
+                              fontSize: 18, // Lớn hơn
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              child: Text(_isLogin ? "Đăng nhập" : "Đăng ký", style: const TextStyle(fontSize: 18)),
-            ),
-            
-            if (_isLogin) ...[
-              const SizedBox(height: 16),
-              const Center(child: Text("Sử dụng tài khoản Demo:", style: TextStyle(color: Colors.grey, fontSize: 12))),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _useDemoAccount('user'),
-                      child: const Text("USER"),
+
+              const SizedBox(height: 30),
+
+              // Khu vực chọn nhanh vai trò (Demo) với style vui hơn
+              if (_isLogin) ...[
+                const Center(
+                  child: Text(
+                    "BẠN ĐĂNG NHẬP VỚI VAI TRÒ:",
+                    style: TextStyle(
+                      fontSize: 14, // Lớn hơn
+                      fontWeight: FontWeight.bold,
+                      color: Colors.lightBlue, // Màu xanh
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _useDemoAccount('admin'),
-                      style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.indigo)),
-                      child: const Text("ADMIN", style: TextStyle(color: Colors.indigo)),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildRoleButton(
+                        "HỌC SINH",
+                        Icons.child_care,
+                        Colors.lightBlue, // Màu xanh cho học sinh
+                        () => _useDemoAccount('user'),
+                      ),
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildRoleButton(
+                        "GIÁO VIÊN",
+                        Icons.assignment_ind,
+                        Colors.indigo, // Giữ indigo cho giáo viên
+                        () => _useDemoAccount('admin'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () => setState(() => _isLogin = !_isLogin),
+                child: Text(
+                  _isLogin
+                      ? "Em chưa có tài khoản? Đăng ký tại đây"
+                      : "Đã có tài khoản? Quay lại đăng nhập",
+                  style: const TextStyle(
+                    color: Colors.indigo,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
+                ),
               ),
             ],
-            
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () => setState(() => _isLogin = !_isLogin),
-              child: Text(_isLogin ? "Chưa có tài khoản? Đăng ký ngay" : "Đã có tài khoản? Đăng nhập"),
-            ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    bool isPassword = false,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: isPassword,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: Colors.lightBlue[300]), // Màu xanh
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.lightBlue[200]!), // Màu xanh
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.lightBlue, width: 2), // Màu xanh
+        ),
+        filled: true,
+        fillColor: Colors.lightBlue[50], // Nền xanh nhạt
+      ),
+    );
+  }
+
+  Widget _buildRoleButton(
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onPressed,
+  ) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 20), // Lớn hơn
+      label: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ), // Lớn hơn
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16), // Cao hơn
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 4, // Tăng elevation
+        shadowColor: color.withOpacity(0.3),
       ),
     );
   }

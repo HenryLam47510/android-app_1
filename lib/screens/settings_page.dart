@@ -22,12 +22,17 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Xóa lịch sử học tập?"),
-        content: const Text("Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa toàn bộ dữ liệu buổi học không?"),
+        content: const Text(
+          "Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa toàn bộ dữ liệu buổi học không?",
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Hủy")),
           TextButton(
-            onPressed: () => Navigator.pop(context), 
-            child: const Text("Xóa sạch", style: TextStyle(color: Colors.red))
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Hủy"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Xóa sạch", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -39,6 +44,8 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Cài đặt"),
+        backgroundColor: Colors.lightBlue, // Màu xanh
+        foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: ListView(
@@ -53,7 +60,9 @@ class _SettingsPageState extends State<SettingsPage> {
           SwitchListTile(
             title: const Text("Nhắc nhở học tập"),
             value: _studyReminders,
-            onChanged: _enableNotifications ? (val) => setState(() => _studyReminders = val) : null,
+            onChanged: _enableNotifications
+                ? (val) => setState(() => _studyReminders = val)
+                : null,
           ),
 
           const Divider(),
@@ -63,7 +72,10 @@ class _SettingsPageState extends State<SettingsPage> {
           ListTile(
             title: const Text("Đổi mật khẩu"),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePasswordPage())),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+            ),
           ),
           SwitchListTile(
             title: const Text("Đăng nhập sinh trắc học"),
@@ -93,7 +105,10 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: () {},
           ),
           ListTile(
-            title: const Text("Xóa sạch lịch sử học tập", style: TextStyle(color: Colors.red)),
+            title: const Text(
+              "Xóa sạch lịch sử học tập",
+              style: TextStyle(color: Colors.red),
+            ),
             leading: const Icon(Icons.delete_sweep_outlined, color: Colors.red),
             onTap: _showDeleteHistoryDialog,
           ),
@@ -104,15 +119,24 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildSectionHeader("Hỗ trợ người dùng", Icons.help_outline),
           ListTile(
             title: const Text("Hướng dẫn sử dụng"),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpCenterPage())),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HelpCenterPage()),
+            ),
           ),
           ListTile(
             title: const Text("Câu hỏi thường gặp (FAQ)"),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpCenterPage())),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HelpCenterPage()),
+            ),
           ),
           ListTile(
             title: const Text("Liên hệ hỗ trợ"),
-            trailing: const Text("support@study.ai", style: TextStyle(color: Colors.blue, fontSize: 12)),
+            trailing: const Text(
+              "support@study.ai",
+              style: TextStyle(color: Colors.blue, fontSize: 12),
+            ),
             onTap: () {},
           ),
 
@@ -124,19 +148,13 @@ class _SettingsPageState extends State<SettingsPage> {
             title: Text("Phiên bản"),
             trailing: Text("1.0.2 (Build 202410)"),
           ),
-          ListTile(
-            title: const Text("Thông tin nhà phát triển"),
-            onTap: () {},
-          ),
+          ListTile(title: const Text("Thông tin nhà phát triển"), onTap: () {}),
           ListTile(
             title: const Text("Chính sách quyền riêng tư"),
             onTap: () {},
           ),
-          ListTile(
-            title: const Text("Điều khoản dịch vụ"),
-            onTap: () {},
-          ),
-          
+          ListTile(title: const Text("Điều khoản dịch vụ"), onTap: () {}),
+
           const SizedBox(height: 50),
         ],
       ),

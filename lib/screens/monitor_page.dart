@@ -1,88 +1,182 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import '../api/api_service.dart';
 
-class MonitorPage extends StatelessWidget {
+class MonitorPage extends StatefulWidget {
   final bool isMonitoring;
   final CameraController? controller;
   final VoidCallback onToggle;
 
   const MonitorPage({
-    super.key, 
-    required this.isMonitoring, 
+    super.key,
+    required this.isMonitoring,
     this.controller,
     required this.onToggle,
   });
 
   @override
+  State<MonitorPage> createState() => _MonitorPageState();
+}
+
+class _MonitorPageState extends State<MonitorPage> {
+  double _focusLevel = 0.5; // Giá trị mặc định 50%
+  Timer? _timer;
+
+  @override
+  void didUpdateWidget(MonitorPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Nếu bắt đầu quay video, kích hoạt timer mỗi 15s
+    if (widget.isMonitoring && !oldWidget.isMonitoring) {
+      _startAITracking();
+    } else if (!widget.isMonitoring && oldWidget.isMonitoring) {
+      _stopAITracking();
+    }
+  }
+
+  @override
+  void dispose() {
+    _stopAITracking();
+    super.dispose();
+  }
+
+  void _startAITracking() {
+    // Chạy ngay lần đầu tiên
+    _runAIPrediction();
+    // Sau đó lặp lại mỗi 15 giây
+    _timer = Timer.periodic(const Duration(seconds: 15), (timer) {
+      _runAIPrediction();
+    });
+  }
+
+  void _stopAITracking() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  Future<void> _runAIPrediction() async {
+    if (widget.controller == null || !widget.controller!.value.isInitialized)
+      return;
+
+    try {
+      // 1. Chụp ảnh màn hình từ camera (ngầm)
+      final XFile image = await widget.controller!.takePicture();
+
+      // 2. Gửi ảnh lên Backend AI và nhận % tập trung
+      final double result = await ApiService.predictFocus(image.path);
+
+      // 3. Cập nhật thanh tiến độ
+      if (mounted) {
+        setState(() {
+          _focusLevel = result;
+        });
+      }
+    } catch (e) {
+      print("Lỗi nhận diện AI: $e");
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("AI Study Monitor", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
+        title: const Text(
+          "AI Study Monitor",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.lightBlue, // Màu xanh cho học sinh
+        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
           Expanded(
-            flex: 4,
+            flex: 6, // Tăng lên 60% màn hình cho camera
             child: Container(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.all(8), // Giảm margin
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
-                color: Colors.black87, 
-                borderRadius: BorderRadius.circular(24),
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(
+                  16,
+                ), // Giảm borderRadius, rectangle hơn
               ),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // 1. Camera Preview
-                  if (isMonitoring && controller != null && controller!.value.isInitialized)
-                    CameraPreview(controller!)
+                  if (widget.isMonitoring &&
+                      widget.controller != null &&
+                      widget.controller!.value.isInitialized)
+                    CameraPreview(widget.controller!)
                   else
                     const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.camera_front_outlined, size: 80, color: Colors.white24),
+                        Icon(
+                          Icons.camera_front_outlined,
+                          size: 80,
+                          color: Colors.white24,
+                        ),
                         SizedBox(height: 12),
-                        Text("Camera chưa bật", style: TextStyle(color: Colors.white38)),
+                        Text(
+                          "Camera chưa bật",
+                          style: TextStyle(color: Colors.white38),
+                        ),
                       ],
                     ),
-                  
-                  // REC Badge khi đang học
-                  if (isMonitoring)
-                    Positioned(
-                      top: 16,
-                      left: 16,
-                      child: _buildLiveBadge(),
-                    ),
-                  
-                  // Nút Start/Stop study nằm trên Preview
-                  Positioned(
-                    bottom: 24,
-                    child: ElevatedButton.icon(
-                      onPressed: onToggle,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isMonitoring ? Colors.redAccent : Colors.indigo,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                      ),
-                      icon: Icon(isMonitoring ? Icons.stop : Icons.play_arrow),
-                      label: Text(isMonitoring ? "Kết thúc buổi học" : "Bắt đầu học ngay"),
-                    ),
-                  ),
+
+                  // Badge trạng thái nổi bật
+                  Positioned(top: 16, left: 16, child: _buildStatusBadge()),
                 ],
               ),
             ),
           ),
+          // Nút to hơn, nằm ngay dưới camera
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: SizedBox(
+              width: double.infinity,
+              height: 60, // To hơn
+              child: ElevatedButton.icon(
+                onPressed: widget.onToggle,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: widget.isMonitoring
+                      ? Colors.redAccent
+                      : Colors.lightBlue, // Màu xanh cho học sinh
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 4, // Nổi bật hơn
+                ),
+                icon: Icon(
+                  widget.isMonitoring ? Icons.stop : Icons.play_arrow,
+                  size: 28, // Icon lớn hơn
+                ),
+                label: Text(
+                  widget.isMonitoring
+                      ? "Kết thúc buổi học"
+                      : "Bắt đầu học ngay",
+                  style: const TextStyle(
+                    fontSize: 18, // Text lớn hơn
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
           Expanded(
-            flex: 5,
+            flex: 4, // Giảm flex cho controls
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
-                  _buildStatusCard(isMonitoring),
+                  _buildStatusCard(widget.isMonitoring),
                   const SizedBox(height: 20),
-                  _buildFocusIndicator(isMonitoring),
+                  _buildFocusIndicator(widget.isMonitoring),
                   const SizedBox(height: 24),
                   _buildAISuggestion(),
                 ],
@@ -94,16 +188,47 @@ class MonitorPage extends StatelessWidget {
     );
   }
 
-  Widget _buildLiveBadge() {
+  Widget _buildStatusBadge() {
+    String statusText;
+    Color bgColor;
+    IconData icon;
+
+    if (widget.isMonitoring) {
+      if (_focusLevel > 0) {
+        statusText = "Đang phân tích";
+        bgColor = Colors.orange;
+        icon = Icons.psychology;
+      } else {
+        statusText = "Đang theo dõi";
+        bgColor = Colors.green;
+        icon = Icons.visibility;
+      }
+    } else {
+      statusText = "Chưa bật camera";
+      bgColor = Colors.grey;
+      icon = Icons.camera_alt;
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(20)),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: const [
-          Icon(Icons.fiber_manual_record, color: Colors.white, size: 12),
-          SizedBox(width: 4),
-          Text("REC", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+        children: [
+          Icon(icon, color: Colors.white, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            statusText,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -112,24 +237,42 @@ class MonitorPage extends StatelessWidget {
   Widget _buildStatusCard(bool monitoring) {
     return Card(
       elevation: 0,
-      color: Colors.indigo.withOpacity(0.05),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.indigo.withOpacity(0.1))),
+      color: Colors.blue.withOpacity(0.05),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.blue.withOpacity(0.1)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            const Icon(Icons.face_retouching_natural, size: 32, color: Colors.indigo),
+            const Icon(Icons.psychology_outlined, size: 32, color: Colors.blue),
             const SizedBox(width: 16),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Cảm xúc (AI)", style: TextStyle(fontSize: 13, color: Colors.grey)),
-                // 4. Emotion detection demo
-                Text(monitoring ? "Đang tập trung" : "---", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  "Phân tích AI",
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+                Text(
+                  monitoring ? "Đang theo dõi..." : "Sẵn sàng",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
             const Spacer(),
-            if (monitoring) const Text("🔥 Cực tốt", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+            if (monitoring)
+              Text(
+                _focusLevel > 0.7 ? "🔥 Tập trung tốt" : "⚠️ Cần chú ý",
+                style: TextStyle(
+                  color: _focusLevel > 0.7 ? Colors.orange : Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
           ],
         ),
       ),
@@ -137,23 +280,46 @@ class MonitorPage extends StatelessWidget {
   }
 
   Widget _buildFocusIndicator(bool monitoring) {
-    double score = 0.85;
+    Color progressColor;
+    if (_focusLevel > 0.7) {
+      progressColor = Colors.green; // Tốt
+    } else if (_focusLevel > 0.5) {
+      progressColor = Colors.yellow; // Trung bình
+    } else {
+      progressColor = Colors.red; // Kém
+    }
+
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text("Độ tập trung", style: TextStyle(fontWeight: FontWeight.bold)),
-            Text("${(score * 100).toInt()}%", style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold)),
+            const Text(
+              "Mức độ tập trung",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Text(
+              "${(_focusLevel * 100).toInt()}%",
+              style: TextStyle(
+                color: progressColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 10),
         LinearProgressIndicator(
-          value: monitoring ? score : 0,
-          minHeight: 12,
-          borderRadius: BorderRadius.circular(6),
-          color: Colors.indigo,
-          backgroundColor: Colors.indigo.withOpacity(0.1),
+          value: monitoring ? _focusLevel : 0,
+          minHeight: 16, // Lớn hơn
+          borderRadius: BorderRadius.circular(8),
+          color: progressColor,
+          backgroundColor: Colors.grey.withOpacity(0.2),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          "Cập nhật mỗi 15 giây",
+          style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
       ],
     );
@@ -162,12 +328,20 @@ class MonitorPage extends StatelessWidget {
   Widget _buildAISuggestion() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.amber.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
-      child: Row(
-        children: const [
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Row(
+        children: [
           Icon(Icons.tips_and_updates, color: Colors.amber),
           SizedBox(width: 12),
-          Expanded(child: Text("AI khuyên bạn: Tư thế ngồi đang hơi cúi, hãy điều chỉnh lại nhé!", style: TextStyle(fontSize: 13))),
+          Expanded(
+            child: Text(
+              "Hệ thống sẽ dựa trên biểu cảm để nhắc nhở tư thế và độ tập trung của bạn.",
+              style: TextStyle(fontSize: 13),
+            ),
+          ),
         ],
       ),
     );

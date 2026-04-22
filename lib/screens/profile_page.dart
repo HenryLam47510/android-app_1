@@ -25,7 +25,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text("Cá nhân", style: TextStyle(fontWeight: FontWeight.bold)),
+            title: const Text(
+              "Cá nhân",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: isAdmin
+                ? Colors.indigo
+                : Colors.lightBlue, // Màu dựa trên role
+            foregroundColor: Colors.white,
             actions: [
               IconButton(
                 icon: const Icon(Icons.settings_outlined),
@@ -55,27 +62,44 @@ class _ProfilePageState extends State<ProfilePage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(user.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                          Text(
+                            user.name,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           if (isAdmin)
                             const Padding(
                               padding: EdgeInsets.only(left: 8.0),
-                              child: Icon(Icons.verified, color: Colors.blue, size: 20),
+                              child: Icon(
+                                Icons.verified,
+                                color: Colors.blue,
+                                size: 20,
+                              ),
                             ),
                         ],
                       ),
-                      Text(user.email, style: const TextStyle(color: Colors.grey)),
+                      Text(
+                        user.email,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const EditProfilePage()),
+                            MaterialPageRoute(
+                              builder: (_) => const EditProfilePage(),
+                            ),
                           );
                         },
                         icon: const Icon(Icons.edit, size: 18),
                         label: const Text("Chỉnh sửa Profile"),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
+                          backgroundColor: isAdmin
+                              ? Colors.indigo
+                              : Colors.lightBlue, // Màu dựa trên role
                           foregroundColor: Colors.white,
                         ),
                       ),
@@ -86,7 +110,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 // --- ADMIN PANEL (Chỉ hiện cho Admin) ---
                 if (isAdmin) ...[
-                  const Text("Quản trị viên", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo)),
+                  const Text(
+                    "Quản trị viên",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.indigo,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   Card(
                     color: Colors.indigo.withOpacity(0.05),
@@ -96,23 +127,43 @@ class _ProfilePageState extends State<ProfilePage> {
                       side: const BorderSide(color: Colors.indigo, width: 0.5),
                     ),
                     child: ListTile(
-                      leading: const Icon(Icons.admin_panel_settings, color: Colors.indigo),
-                      title: const Text("Admin Dashboard", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
-                      subtitle: const Text("Quản lý video, segment và kết quả AI"),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.indigo),
+                      leading: const Icon(
+                        Icons.admin_panel_settings,
+                        color: Colors.indigo,
+                      ),
+                      title: const Text(
+                        "Admin Dashboard",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.indigo,
+                        ),
+                      ),
+                      subtitle: const Text(
+                        "Quản lý video, segment và kết quả AI",
+                      ),
+                      trailing: const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Colors.indigo,
+                      ),
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
+                          MaterialPageRoute(
+                            builder: (_) => const AdminDashboardPage(),
+                          ),
                         );
                       },
                     ),
                   ),
                   const SizedBox(height: 32),
                 ],
-                
+
                 // Section: Thống kê học tập (Study Statistics)
-                const Text("Thống kê học tập", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  "Thống kê học tập",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 12),
                 GridView.count(
                   shrinkWrap: true,
@@ -122,20 +173,43 @@ class _ProfilePageState extends State<ProfilePage> {
                   mainAxisSpacing: 12,
                   childAspectRatio: 1.6,
                   children: [
-                    _buildStatCard("Tổng thời gian", "12h", Icons.timer_outlined, Colors.orange),
-                    _buildStatCard("Số buổi học", "15", Icons.history_edu, Colors.blue),
-                    _buildStatCard("Cảm xúc chính", "Bình thường", Icons.face_outlined, Colors.green),
-                    _buildStatCard("Độ tập trung", "72%", Icons.psychology_outlined, Colors.purple),
+                    _buildStatCard(
+                      "Tổng thời gian",
+                      "12h",
+                      Icons.timer_outlined,
+                      Colors.orange,
+                    ),
+                    _buildStatCard(
+                      "Số buổi học",
+                      "15",
+                      Icons.history_edu,
+                      Colors.blue,
+                    ),
+                    _buildStatCard(
+                      "Cảm xúc chính",
+                      "Bình thường",
+                      Icons.face_outlined,
+                      Colors.green,
+                    ),
+                    _buildStatCard(
+                      "Độ tập trung",
+                      "72%",
+                      Icons.psychology_outlined,
+                      Colors.purple,
+                    ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 32),
 
                 // Section: Tài khoản & Hệ thống
-                const Text("Tài khoản & Hệ thống", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  "Tài khoản & Hệ thống",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 12),
                 _buildOptionTile(
-                  Icons.settings, 
+                  Icons.settings,
                   "Cài đặt ứng dụng",
                   onTap: () {
                     Navigator.push(
@@ -145,17 +219,19 @@ class _ProfilePageState extends State<ProfilePage> {
                   },
                 ),
                 _buildOptionTile(
-                  Icons.security, 
+                  Icons.security,
                   "Bảo mật & Mật khẩu",
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+                      MaterialPageRoute(
+                        builder: (_) => const ChangePasswordPage(),
+                      ),
                     );
                   },
                 ),
                 _buildOptionTile(
-                  Icons.help_center, 
+                  Icons.help_center,
                   "Trung tâm trợ giúp",
                   onTap: () {
                     Navigator.push(
@@ -164,9 +240,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     );
                   },
                 ),
-                
+
                 const SizedBox(height: 32),
-                const Text("Thành tích (Huy hiệu)", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  "Thành tích (Huy hiệu)",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 16),
                 SizedBox(
                   height: 100,
@@ -174,19 +253,27 @@ class _ProfilePageState extends State<ProfilePage> {
                     scrollDirection: Axis.horizontal,
                     children: [
                       _buildBadge(Icons.timer, "Chăm chỉ", Colors.orange),
-                      _buildBadge(Icons.auto_awesome, "Tập trung", Colors.indigo),
+                      _buildBadge(
+                        Icons.auto_awesome,
+                        "Tập trung",
+                        Colors.indigo,
+                      ),
                       _buildBadge(Icons.military_tech, "Bền bỉ", Colors.green),
                       _buildBadge(Icons.emoji_events, "Vô địch", Colors.amber),
-                      _buildBadge(Icons.local_fire_department, "Nhiệt huyết", Colors.red),
+                      _buildBadge(
+                        Icons.local_fire_department,
+                        "Nhiệt huyết",
+                        Colors.red,
+                      ),
                     ],
                   ),
                 ),
 
                 const Divider(height: 48),
                 _buildOptionTile(
-                  Icons.logout, 
-                  "Đăng xuất", 
-                  color: Colors.red, 
+                  Icons.logout,
+                  "Đăng xuất",
+                  color: Colors.red,
                   onTap: () => isLoggedInNotifier.value = false,
                 ),
                 const SizedBox(height: 100),
@@ -198,7 +285,12 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -216,8 +308,17 @@ class _ProfilePageState extends State<ProfilePage> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
               ],
             ),
           ],
@@ -234,20 +335,35 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, color: color, size: 30),
           ),
           const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontSize: 12), textAlign: TextAlign.center),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildOptionTile(IconData icon, String title, {Color color = Colors.black87, VoidCallback? onTap}) {
+  Widget _buildOptionTile(
+    IconData icon,
+    String title, {
+    Color color = Colors.black87,
+    VoidCallback? onTap,
+  }) {
     return ListTile(
       leading: Icon(icon, color: color),
-      title: Text(title, style: TextStyle(color: color, fontWeight: FontWeight.w500)),
+      title: Text(
+        title,
+        style: TextStyle(color: color, fontWeight: FontWeight.w500),
+      ),
       trailing: const Icon(Icons.chevron_right, size: 20),
       onTap: onTap ?? () {},
     );

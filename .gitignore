@@ -1,5 +1,6 @@
 *.iml
 .gradle
+.dart_tool/
 /local.properties
 /.idea/caches
 /.idea/libraries

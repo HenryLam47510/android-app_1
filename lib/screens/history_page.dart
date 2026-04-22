@@ -28,7 +28,12 @@ class _HistoryPageState extends State<HistoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Lịch sử học tập", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Lịch sử học tập",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.lightBlue, // Màu xanh cho học sinh
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -42,7 +47,7 @@ class _HistoryPageState extends State<HistoryPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          
+
           if (snapshot.hasError) {
             return Center(
               child: Column(
@@ -51,7 +56,10 @@ class _HistoryPageState extends State<HistoryPage> {
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
                   const Text("Lỗi tải dữ liệu. Vui lòng kiểm tra server."),
-                  TextButton(onPressed: _refreshHistory, child: const Text("Thử lại")),
+                  TextButton(
+                    onPressed: _refreshHistory,
+                    child: const Text("Thử lại"),
+                  ),
                 ],
               ),
             );
@@ -64,11 +72,21 @@ class _HistoryPageState extends State<HistoryPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.history_outlined, size: 64, color: Colors.grey[400]),
+                  Icon(
+                    Icons.history_outlined,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
                   const SizedBox(height: 16),
-                  const Text("Chưa có lịch sử học tập", style: TextStyle(color: Colors.grey)),
+                  const Text(
+                    "Chưa có lịch sử học tập",
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   const SizedBox(height: 8),
-                  const Text("Hãy bắt đầu buổi học đầu tiên của bạn!", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const Text(
+                    "Hãy bắt đầu buổi học đầu tiên của bạn!",
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
                 ],
               ),
             );
@@ -81,7 +99,9 @@ class _HistoryPageState extends State<HistoryPage> {
               final s = sessions[index];
               return Card(
                 margin: const EdgeInsets.only(bottom: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(16),
                   leading: Container(
@@ -91,7 +111,11 @@ class _HistoryPageState extends State<HistoryPage> {
                       color: Colors.indigo.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.bar_chart, color: Colors.indigo, size: 30),
+                    child: const Icon(
+                      Icons.bar_chart,
+                      color: Colors.indigo,
+                      size: 30,
+                    ),
                   ),
                   title: Text(
                     "Buổi học ${s.startTime.day}/${s.startTime.month}/${s.startTime.year}",
@@ -106,8 +130,8 @@ class _HistoryPageState extends State<HistoryPage> {
                       Text(
                         "${(s.avgFocusScore * 100).toInt()}",
                         style: const TextStyle(
-                          fontSize: 18, 
-                          fontWeight: FontWeight.bold, 
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                           color: Colors.indigo,
                         ),
                       ),
