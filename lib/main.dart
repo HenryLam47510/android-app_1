@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
     return ValueListenableBuilder2<ThemeMode, bool>(
       first: themeNotifier,
       second: isLoggedInNotifier,
-      builder: (_, ThemeMode currentMode, bool isLoggedIn, __) {
+      builder: (_, ThemeMode currentMode, bool isLoggedIn, _) {
         return MaterialApp(
           title: "Study Emotion Monitor",
           debugShowCheckedModeBanner: false,
@@ -166,14 +166,11 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: pages[_selectedIndex],
       bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavItem(0, Icons.dashboard, Icons.dashboard_outlined),
             _buildNavItem(1, Icons.history, Icons.history_outlined),
-            const SizedBox(width: 48),
             _buildNavItem(2, Icons.notifications, Icons.notifications_none),
             _buildNavItem(3, Icons.person, Icons.person_outline),
           ],

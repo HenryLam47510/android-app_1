@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:cross_file/cross_file.dart';
 import '../../models/post.dart';
 import '../../features/study/study_session.dart';
 import '../../models/admin_video.dart';
@@ -11,18 +12,21 @@ class ApiService {
   static String get aiBaseUrl => baseUrl;
 
   // Hàm gọi AI nhận diện độ tập trung
-  static Future<double> predictFocus(String imagePath) async {
+  static Future<double> predictFocus(XFile imageFile) async {
     try {
-      var request = http.MultipartRequest(
+      final bytes = await imageFile.readAsBytes();
+      final request = http.MultipartRequest(
         'POST',
         Uri.parse('$aiBaseUrl/predict'),
       );
-      request.files.add(await http.MultipartFile.fromPath('file', imagePath));
+      request.files.add(
+        http.MultipartFile.fromBytes('file', bytes, filename: imageFile.name),
+      );
 
-      var response = await request.send();
+      final response = await request.send();
       if (response.statusCode == 200) {
-        var responseData = await response.stream.bytesToString();
-        var json = jsonDecode(responseData);
+        final responseData = await response.stream.bytesToString();
+        final json = jsonDecode(responseData);
         return (json['focus_level'] as num).toDouble();
       }
     } catch (e) {
@@ -77,7 +81,10 @@ class ApiService {
   }
 
   static Future<bool> deleteSegment(String id) async {
-    return true;
+    final response = await http.delete(
+      Uri.parse('$baseUrl/admin/segments/$id'),
+    );
+    return response.statusCode == 200;
   }
 
   static Future<Map<String, dynamic>> login(

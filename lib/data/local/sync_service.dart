@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../../models/video_sync_item.dart';
 import 'database_service.dart';
@@ -16,6 +17,10 @@ class SyncService {
       if (video.id == null) continue;
 
       try {
+        if (kIsWeb) {
+          throw Exception('Sync service không hỗ trợ trên web');
+        }
+
         // 1. Cập nhật trạng thái đang upload
         await _db.updateVideoStatus(video.id!, SyncStatus.uploading);
 

@@ -82,34 +82,44 @@ class _AdminVideoDetailPageState extends State<AdminVideoDetailPage> {
               height: 250,
               width: double.infinity,
               color: Colors.black,
-              child: _isInitialized
-                  ? Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        AspectRatio(
-                          aspectRatio: _controller!.value.aspectRatio,
-                          child: VideoPlayer(_controller!),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            _controller!.value.isPlaying
-                                ? Icons.pause_circle_filled
-                                : Icons.play_circle_filled,
-                            color: Colors.white.withOpacity(0.8),
-                            size: 64,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _controller!.value.isPlaying
-                                  ? _controller!.pause()
-                                  : _controller!.play();
-                            });
-                          },
-                        ),
-                      ],
-                    )
+              child: widget.video.videoUrl.isNotEmpty
+                  ? _isInitialized
+                        ? Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              AspectRatio(
+                                aspectRatio: _controller!.value.aspectRatio,
+                                child: VideoPlayer(_controller!),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  _controller!.value.isPlaying
+                                      ? Icons.pause_circle_filled
+                                      : Icons.play_circle_filled,
+                                  color: Colors.white.withOpacity(0.8),
+                                  size: 64,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _controller!.value.isPlaying
+                                        ? _controller!.pause()
+                                        : _controller!.play();
+                                  });
+                                },
+                              ),
+                            ],
+                          )
+                        : const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          )
                   : const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
+                      child: Text(
+                        'Không có video tổng hợp. Vui lòng xem từng segment.',
+                        style: TextStyle(color: Colors.white),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
             ),
 
@@ -159,7 +169,7 @@ class _AdminVideoDetailPageState extends State<AdminVideoDetailPage> {
                         child: Text(seg.segmentNumber.toString()),
                       ),
                       title: Text(
-                        "Đoạn ${seg.startTime.inSeconds}s - ${seg.endTime.inSeconds}s",
+                        "Đoạn ${seg.startTime.hour.toString().padLeft(2, '0')}:${seg.startTime.minute.toString().padLeft(2, '0')} - ${seg.endTime.hour.toString().padLeft(2, '0')}:${seg.endTime.minute.toString().padLeft(2, '0')}",
                       ),
                       subtitle: Text("Trạng thái: ${seg.status}"),
                       trailing: IconButton(

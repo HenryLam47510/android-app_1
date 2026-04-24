@@ -20,7 +20,7 @@ class MonitorPage extends StatefulWidget {
 }
 
 class _MonitorPageState extends State<MonitorPage> {
-  double _focusLevel = 0.5; // Giá trị mặc định 50%
+  double _focusLevel = 0.9; // Giá trị mặc định 90%
   Timer? _timer;
 
   @override
@@ -64,7 +64,7 @@ class _MonitorPageState extends State<MonitorPage> {
       final XFile image = await widget.controller!.takePicture();
 
       // 2. Gửi ảnh lên Backend AI và nhận % tập trung
-      final double result = await ApiService.predictFocus(image.path);
+      final double result = await ApiService.predictFocus(image);
 
       // 3. Cập nhật thanh tiến độ
       if (mounted) {

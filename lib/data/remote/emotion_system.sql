@@ -147,6 +147,34 @@ INSERT INTO `videos` (`id`, `user_id`, `file_path`, `duration`, `status`, `creat
 -- --------------------------------------------------------
 
 --
+-- Cấu trúc bảng cho bảng `video_segments`
+--
+
+CREATE TABLE `video_segments` (
+  `id` int(11) NOT NULL,
+  `video_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `segment_number` int(11) NOT NULL,
+  `file_path` varchar(255) NOT NULL,
+  `start_time` datetime NOT NULL,
+  `end_time` datetime DEFAULT NULL,
+  `duration` int(11) DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'recorded',
+  `created_at` datetime DEFAULT current_timestamp(),
+  `concentration_score` float DEFAULT NULL,
+  `focus_status` varchar(50) DEFAULT NULL,
+  `focus_emoji` varchar(10) DEFAULT NULL,
+  `emotions` json DEFAULT NULL,
+  `emotion_breakdown` json DEFAULT NULL,
+  `dominant_emotion` varchar(50) DEFAULT NULL,
+  `frame_count` int(11) DEFAULT NULL,
+  `presence` float DEFAULT NULL,
+  `raw_score` float DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Cấu trúc bảng cho bảng `video_sync_queue`
 --
 
@@ -207,6 +235,14 @@ ALTER TABLE `videos`
   ADD KEY `idx_videos_user` (`user_id`);
 
 --
+-- Chỉ mục cho bảng `video_segments`
+--
+ALTER TABLE `video_segments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_video_segments_video` (`video_id`),
+  ADD KEY `idx_video_segments_user` (`user_id`);
+
+--
 -- Chỉ mục cho bảng `video_sync_queue`
 --
 ALTER TABLE `video_sync_queue`
@@ -254,6 +290,12 @@ ALTER TABLE `videos`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT cho bảng `video_segments`
+--
+ALTER TABLE `video_segments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT cho bảng `video_sync_queue`
 --
 ALTER TABLE `video_sync_queue`
@@ -292,6 +334,13 @@ ALTER TABLE `study_sessions`
 --
 ALTER TABLE `videos`
   ADD CONSTRAINT `videos_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Các ràng buộc cho bảng `video_segments`
+--
+ALTER TABLE `video_segments`
+  ADD CONSTRAINT `video_segments_ibfk_1` FOREIGN KEY (`video_id`) REFERENCES `videos` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `video_segments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Các ràng buộc cho bảng `video_sync_queue`
