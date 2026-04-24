@@ -15,6 +15,17 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final Map<String, double> _weeklyStudyHours = {
+    'Thứ 2': 2,
+    'Thứ 3': 3,
+    'Thứ 4': 1.5,
+    'Thứ 5': 2.5,
+    'Thứ 6': 1,
+  };
+
+  double get _totalWeeklyHours =>
+      _weeklyStudyHours.values.fold(0.0, (sum, hours) => sum + hours);
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<User>(
@@ -175,13 +186,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     _buildStatCard(
                       "Tổng thời gian",
-                      "12h",
+                      "${_totalWeeklyHours.toStringAsFixed(1)}h",
                       Icons.timer_outlined,
                       Colors.orange,
+                      onTap: () => _showWeeklyStudyBottomSheet(context),
                     ),
                     _buildStatCard(
                       "Số buổi học",
-                      "15",
+                      "5",
                       Icons.history_edu,
                       Colors.blue,
                     ),
@@ -200,6 +212,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
 
+                const SizedBox(height: 24),
+                _buildWeeklyStudyChart(),
                 const SizedBox(height: 32),
 
                 // Section: Tài khoản & Hệ thống
@@ -289,41 +303,81 @@ class _ProfilePageState extends State<ProfilePage> {
     String label,
     String value,
     IconData icon,
-    Color color,
-  ) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: color.withOpacity(0.2)),
-      ),
-      color: color.withOpacity(0.05),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Icon(icon, color: color, size: 24),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: color.withOpacity(0.2)),
+        ),
+        color: color.withOpacity(0.05),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: color, size: 24),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                Text(
-                  label,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-          ],
+                  Text(
+                    label,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  void _showWeeklyStudyBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Chi tiết giờ học trong tuần',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              _buildWeeklyStudyChart(),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -366,6 +420,92 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       trailing: const Icon(Icons.chevron_right, size: 20),
       onTap: onTap ?? () {},
+    );
+  }
+
+  Widget _buildWeeklyStudyChart() {
+    final maxHours = _weeklyStudyHours.values.fold(
+      0.0,
+      (max, h) => h > max ? h : max,
+    );
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Giờ học trong tuần',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 180,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: _weeklyStudyHours.entries.map((entry) {
+                  return Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${entry.value.toStringAsFixed(entry.value % 1 == 0 ? 0 : 1)}h',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.lightBlue.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            alignment: Alignment.bottomCenter,
+                            child: FractionallySizedBox(
+                              heightFactor: maxHours > 0
+                                  ? entry.value / maxHours
+                                  : 0,
+                              alignment: Alignment.bottomCenter,
+                              child: Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: Colors.lightBlue,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          entry.key,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Tổng: ${_totalWeeklyHours.toStringAsFixed(1)} giờ',
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

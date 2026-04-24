@@ -7,7 +7,7 @@ import tempfile
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from PIL import Image
 from typing import List, Optional, Dict
 from datetime import datetime
@@ -106,17 +106,6 @@ class UserResponse(BaseModel):
     created_at: datetime
 
 
-class StudySessionResponse(BaseModel):
-    id: int
-    user_id: int
-    start_time: Optional[datetime]
-    end_time: Optional[datetime]
-    duration: Optional[int]
-    status: Optional[str]
-    created_at: datetime
-    videos: List[VideoResponse] = []
-
-
 class VideoSegmentResponse(BaseModel):
     id: int
     video_id: int
@@ -146,7 +135,18 @@ class VideoResponse(BaseModel):
     duration: Optional[int]
     status: Optional[str]
     created_at: datetime
-    segments: List[VideoSegmentResponse] = []
+    segments: List[VideoSegmentResponse] = Field(default_factory=list)
+
+
+class StudySessionResponse(BaseModel):
+    id: int
+    user_id: int
+    start_time: Optional[datetime]
+    end_time: Optional[datetime]
+    duration: Optional[int]
+    status: Optional[str]
+    created_at: datetime
+    videos: List[VideoResponse] = Field(default_factory=list)
 
 
 class AnalyzeResponse(BaseModel):
