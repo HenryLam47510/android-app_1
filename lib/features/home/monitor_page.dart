@@ -179,7 +179,7 @@ class _MonitorPageState extends State<MonitorPage> {
                   const SizedBox(height: 20),
                   _buildFocusIndicator(widget.isMonitoring),
                   const SizedBox(height: 24),
-                  _buildAISuggestion(),
+                  _buildStudyReminder(),
                 ],
               ),
             ),
@@ -326,21 +326,63 @@ class _MonitorPageState extends State<MonitorPage> {
     );
   }
 
-  Widget _buildAISuggestion() {
+  Widget _buildStudyReminder() {
+    final bool isNotStudying = _focusLevel == 0;
+    final bool isSleepy = _focusLevel > 0 && _focusLevel < 0.3;
+
+    final reminderTitle = isNotStudying
+        ? 'Bạn đang không học'
+        : isSleepy
+        ? 'Cẩn thận buồn ngủ'
+        : 'Giữ vững sự tập trung';
+
+    final reminderText = isNotStudying
+        ? 'FocusLevel = 0 có nghĩa là học sinh đang không học. Hãy mở camera và bắt đầu lại.'
+        : isSleepy
+        ? 'Bạn có dấu hiệu buồn ngủ. Ngồi thẳng, hít thở sâu và tập trung vào bài học.'
+        : 'Tiếp tục duy trì tư thế thẳng và tập trung cao độ.';
+
+    final reminderColor = isNotStudying
+        ? Colors.red
+        : isSleepy
+        ? Colors.orange
+        : Colors.green;
+
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.amber.withOpacity(0.1),
+        color: reminderColor.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: reminderColor.withOpacity(0.2)),
       ),
-      child: const Row(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.tips_and_updates, color: Colors.amber),
-          SizedBox(width: 12),
+          Icon(
+            isNotStudying ? Icons.block : Icons.watch_later,
+            color: reminderColor,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              "Hệ thống sẽ dựa trên biểu cảm để nhắc nhở tư thế và độ tập trung của bạn.",
-              style: TextStyle(fontSize: 13),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  reminderTitle,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: reminderColor,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  reminderText,
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                ),
+              ],
             ),
           ),
         ],
