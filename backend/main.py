@@ -173,7 +173,7 @@ def login_get():
 
 @app.get("/register")
 def register_get():
-    return {"detail": "Use POST /register with name, email, password"}
+    return {"detail": "Use POST /register 1with name, email, password"}
 
 
 @app.post("/predict")
