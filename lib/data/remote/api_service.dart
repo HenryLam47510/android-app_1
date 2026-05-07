@@ -41,6 +41,15 @@ class ApiService {
       "totalVideos": 150,
       "totalStorage": "12.5 GB",
       "totalAiAnalyses": 1240,
+      "totalStudents": 520,
+      "totalClasses": 18,
+      "attendanceToday": 324,
+      "camerasOnline": 12,
+      "recentActivities": [
+        'AI đã nhận diện 45 sinh viên trong hôm nay',
+        'Tối ưu ngưỡng nhận diện mặt thành công',
+        'Video mới được upload từ camera C3',
+      ],
     };
   }
 

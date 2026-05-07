@@ -62,6 +62,57 @@ class _AdminVideoDetailPageState extends State<AdminVideoDetailPage> {
     }
   }
 
+  void _exportSnapshot() {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Xuất snapshot thành công.')));
+  }
+
+  void _showFaceDetectionInfo() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Frame chứa khuôn mặt'),
+        content: const Text(
+          'Hiển thị khung hình khuôn mặt phát hiện trong phân đoạn.\nBạn có thể xuất ảnh snapshot hoặc lọc theo sinh viên.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLabelSegmentDialog(int segmentNumber) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Gắn nhãn segment $segmentNumber'),
+        content: const Text(
+          'Chọn sinh viên tương ứng để gắn nhãn cho đoạn này. Hiện tại là placeholder chức năng.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Đã gắn nhãn segment $segmentNumber.')),
+              );
+            },
+            child: const Text('Lưu nhãn'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -144,6 +195,22 @@ class _AdminVideoDetailPageState extends State<AdminVideoDetailPage> {
                           : Colors.orange,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _exportSnapshot,
+                        icon: const Icon(Icons.camera_alt_outlined),
+                        label: const Text('Xuất snapshot'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _showFaceDetectionInfo,
+                        icon: const Icon(Icons.face),
+                        label: const Text('Xem khuôn mặt'),
+                      ),
+                    ],
+                  ),
                   const Divider(height: 32),
 
                   Row(
@@ -172,12 +239,27 @@ class _AdminVideoDetailPageState extends State<AdminVideoDetailPage> {
                         "Đoạn ${seg.startTime.hour.toString().padLeft(2, '0')}:${seg.startTime.minute.toString().padLeft(2, '0')} - ${seg.endTime.hour.toString().padLeft(2, '0')}:${seg.endTime.minute.toString().padLeft(2, '0')}",
                       ),
                       subtitle: Text("Trạng thái: ${seg.status}"),
-                      trailing: IconButton(
-                        icon: const Icon(
-                          Icons.delete_sweep,
-                          color: Colors.redAccent,
-                        ),
-                        onPressed: () => ApiService.deleteSegment(seg.id),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.label_outline,
+                              color: Colors.indigo,
+                            ),
+                            tooltip: 'Gắn nhãn sinh viên',
+                            onPressed: () =>
+                                _showLabelSegmentDialog(seg.segmentNumber),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.delete_sweep,
+                              color: Colors.redAccent,
+                            ),
+                            tooltip: 'Xóa segment',
+                            onPressed: () => ApiService.deleteSegment(seg.id),
+                          ),
+                        ],
                       ),
                     ),
                   ),

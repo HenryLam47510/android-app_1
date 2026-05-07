@@ -12,11 +12,24 @@ class AdminVideoListPage extends StatefulWidget {
 
 class _AdminVideoListPageState extends State<AdminVideoListPage> {
   late Future<List<AdminVideo>> _videosFuture;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _videosFuture = ApiService.getAdminVideos();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _refresh() {
@@ -41,60 +54,140 @@ class _AdminVideoListPageState extends State<AdminVideoListPage> {
             return const Center(child: CircularProgressIndicator());
           }
           final videos = snapshot.data ?? [];
-          if (videos.isEmpty) {
-            return const Center(child: Text("Không có video nào."));
+          final filteredVideos = _searchQuery.isEmpty
+              ? videos
+              : videos.where((video) {
+                  final lowerQuery = _searchQuery.toLowerCase();
+                  return video.filename.toLowerCase().contains(lowerQuery) ||
+                      video.status.toLowerCase().contains(lowerQuery) ||
+                      video.createdAt.toString().contains(lowerQuery);
+                }).toList();
+
+          if (filteredVideos.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Không tìm thấy video phù hợp với "$_searchQuery".',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ],
+              ),
+            );
           }
 
-          return ListView.builder(
-            itemCount: videos.length,
-            padding: const EdgeInsets.all(12),
-            itemBuilder: (context, index) {
-              final video = videos[index];
-              return Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-                child: ListTile(
-                  leading: const Icon(
-                    Icons.video_collection,
-                    color: Colors.blue,
-                  ),
-                  title: Text(
-                    video.filename,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    labelText: 'Tìm kiếm theo tên / trạng thái / ngày',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                  ),
-                  subtitle: Text(
-                    "${video.duration.inMinutes} phút • ${video.createdAt.day}/${video.createdAt.month}",
-                  ),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: video.status == "processed"
-                          ? Colors.green
-                          : Colors.orange,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      video.status.toUpperCase(),
-                      style: const TextStyle(color: Colors.white, fontSize: 10),
-                    ),
-                  ),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AdminVideoDetailPage(video: video),
-                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                          )
+                        : null,
                   ),
                 ),
-              );
-            },
+              ),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    _buildFilterChip('Hôm nay'),
+                    _buildFilterChip('Lớp AI01'),
+                    _buildFilterChip('Sinh viên'),
+                    _buildFilterChip('Chưa xử lý'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: filteredVideos.length,
+                  padding: const EdgeInsets.all(12),
+                  itemBuilder: (context, index) {
+                    final video = filteredVideos[index];
+                    return Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListTile(
+                        leading: const Icon(
+                          Icons.video_collection,
+                          color: Colors.blue,
+                        ),
+                        title: Text(
+                          video.filename,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: Text(
+                          "${video.duration.inMinutes} phút • ${video.createdAt.day}/${video.createdAt.month}",
+                        ),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: video.status == "processed"
+                                ? Colors.green
+                                : Colors.orange,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            video.status.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AdminVideoDetailPage(video: video),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: ActionChip(
+        label: Text(label),
+        onPressed: () {
+          setState(() {
+            _searchController.text = label;
+          });
         },
       ),
     );
