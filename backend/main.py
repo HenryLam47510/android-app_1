@@ -771,16 +771,100 @@ def admin_dashboard():
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
+                cursor.execute("SELECT COUNT(*) AS total_students FROM users WHERE role = 'student'")
+                students = cursor.fetchone()
+                cursor.execute("SELECT COUNT(*) AS total_users FROM users")
+                users = cursor.fetchone()
                 cursor.execute("SELECT COUNT(*) AS total_frames FROM frame_emotions")
                 frames = cursor.fetchone()
+                cursor.execute(
+                    "SELECT COUNT(*) AS total_images FROM frame_emotions WHERE image_path IS NOT NULL AND image_path != ''"
+                )
+                images = cursor.fetchone()
                 cursor.execute("SELECT COUNT(*) AS total_sessions FROM study_sessions")
                 sessions = cursor.fetchone()
+                cursor.execute(
+                    "SELECT COUNT(*) AS today_frames FROM frame_emotions WHERE DATE(timestamp) = CURDATE()"
+                )
+                today_frames = cursor.fetchone()
+                cursor.execute(
+                    "SELECT users.name, fe.emotion, fe.timestamp FROM frame_emotions fe "
+                    "JOIN users ON users.id = fe.user_id "
+                    "ORDER BY fe.timestamp DESC LIMIT 5"
+                )
+                recent = cursor.fetchall()
+
+                recent_activities = [
+                    f"{row['name']} - {row['emotion']} @ {row['timestamp']}"
+                    for row in recent
+                ]
+
                 return {
-                    "totalFrames": frames['total_frames'],
-                    "totalSessions": sessions['total_sessions'],
+                    "totalStudents": students['total_students'] or 0,
+                    "totalUsers": users['total_users'] or 0,
+                    "totalFrames": frames['total_frames'] or 0,
+                    "totalImages": images['total_images'] or 0,
+                    "totalSessions": sessions['total_sessions'] or 0,
+                    "todayFrames": today_frames['today_frames'] or 0,
+                    "totalAiAnalyses": frames['total_frames'] or 0,
+                    "attendanceToday": today_frames['today_frames'] or 0,
+                    "recentActivities": recent_activities,
                 }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/admin/users")
+def admin_users():
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT id, name, email, role FROM users ORDER BY name ASC"
+                )
+                users = cursor.fetchall()
+                return users
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/admin/user-daily-stats")
+def admin_user_daily_stats(user_id: int = None, date: str = None):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                query = (
+                    "SELECT u.id AS user_id, u.name, u.email, "
+                    "DATE(fe.timestamp) AS record_date, "
+                    "COUNT(*) AS total_frames, "
+                    "SUM(fe.image_path IS NOT NULL AND fe.image_path != '') AS saved_images "
+                    "FROM frame_emotions fe "
+                    "JOIN users u ON u.id = fe.user_id "
+                )
+                params = []
+                if user_id is not None:
+                    query += "WHERE fe.user_id = %s "
+                    params.append(user_id)
+                    if date:
+                        query += "AND DATE(fe.timestamp) = %s "
+                        params.append(date)
+                elif date:
+                    query += "WHERE DATE(fe.timestamp) = %s "
+                    params.append(date)
+                query += "GROUP BY u.id, record_date "
+                query += "ORDER BY u.name ASC, record_date DESC"
+
+                cursor.execute(query, params)
+                stats = cursor.fetchall()
+                for row in stats:
+                    if isinstance(row.get('record_date'), (str,)):
+                        continue
+                    if row.get('record_date') is not None:
+                        row['record_date'] = row['record_date'].isoformat()
+                return stats
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
 
 @app.get("/admin/emotion-timeline/{user_id}")
 def get_emotion_timeline(user_id: int, date: str = None):

@@ -11,21 +11,48 @@ class AdminEmotionTimelinePage extends StatefulWidget {
 
 class _AdminEmotionTimelinePageState extends State<AdminEmotionTimelinePage> {
   late Future<List<Map<String, dynamic>>> _timelineFuture;
+  late Future<List<Map<String, dynamic>>> _usersFuture;
   final TextEditingController _searchController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
+  List<Map<String, dynamic>> _users = [];
+  int? _selectedUserId;
 
   @override
   void initState() {
     super.initState();
-    _loadTimeline();
+    _usersFuture = ApiService.getAdminUsers();
+    _loadUsers();
+  }
+
+  void _loadUsers() {
+    _usersFuture
+        .then((users) {
+          if (!mounted) return;
+          setState(() {
+            _users = users;
+            _selectedUserId = users.isNotEmpty
+                ? users.first['id'] as int
+                : null;
+            _loadTimeline();
+          });
+        })
+        .catchError((_) {
+          if (!mounted) return;
+          setState(() {
+            _users = [];
+          });
+        });
   }
 
   void _loadTimeline() {
+    if (_selectedUserId == null) {
+      return;
+    }
     setState(() {
       _timelineFuture = ApiService.getEmotionTimeline(
-        1,
+        _selectedUserId!,
         date: _selectedDate,
-      ); // user_id = 1 for now
+      );
     });
   }
 
@@ -96,146 +123,205 @@ class _AdminEmotionTimelinePageState extends State<AdminEmotionTimelinePage> {
           ),
         ],
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _timelineFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final frames = snapshot.data ?? [];
-          final groupedData = _groupByHour(frames);
-
-          if (groupedData.isEmpty) {
-            return const Center(
-              child: Text('Không có dữ liệu cảm xúc cho ngày này'),
-            );
-          }
-
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Ngày: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+      body: Column(
+        children: [
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _usersFuture,
+            builder: (context, userSnapshot) {
+              if (userSnapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: LinearProgressIndicator(),
+                );
+              }
+              final users = userSnapshot.data ?? [];
+              if (users.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('Không có tài khoản để hiển thị timeline.'),
+                );
+              }
+              return Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: DropdownButtonFormField<int>(
+                  value: _selectedUserId,
+                  decoration: const InputDecoration(
+                    labelText: 'Chọn tài khoản',
+                    border: OutlineInputBorder(),
                   ),
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: groupedData.length,
-                  padding: const EdgeInsets.all(16),
-                  itemBuilder: (context, index) {
-                    final hourData = groupedData[index];
-                    final emotions =
-                        hourData['emotions'] as Map<String, dynamic>;
-                    final snapshots =
-                        hourData['snapshots'] as List<Map<String, dynamic>>;
-
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ExpansionTile(
-                        title: Text(
-                          hourData['hour'],
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        subtitle: Text(
-                          emotions.keys
-                              .map((emotion) {
-                                final count = emotions[emotion]['count'];
-                                return '$emotion (x$count)';
-                              })
-                              .join(', '),
-                        ),
-                        children: [
-                          if (snapshots.isNotEmpty) ...[
-                            const Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              child: Text(
-                                'Snapshots:',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            SizedBox(
-                              height: 100,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: snapshots.length,
-                                itemBuilder: (context, snapIndex) {
-                                  final snapshot = snapshots[snapIndex];
-                                  return GestureDetector(
-                                    onTap: () =>
-                                        _showSnapshotDialog(context, snapshot),
-                                    child: Container(
-                                      width: 80,
-                                      margin: const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Expanded(
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey[200],
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              child: const Icon(
-                                                Icons.image,
-                                                size: 32,
-                                              ),
-                                            ),
-                                          ),
-                                          Text(
-                                            snapshot['emotion'],
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                            ),
-                                          ),
-                                          Text(
-                                            DateTime.parse(
-                                                  snapshot['timestamp'],
-                                                )
-                                                .toString()
-                                                .split(' ')[1]
-                                                .substring(0, 5),
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 8),
-                        ],
+                  items: users.map((user) {
+                    return DropdownMenuItem<int>(
+                      value: user['id'] as int,
+                      child: Text(
+                        user['name'] ?? user['email'] ?? 'Người dùng',
                       ),
                     );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      _selectedUserId = value;
+                    });
+                    _loadTimeline();
                   },
                 ),
-              ),
-            ],
-          );
-        },
+              );
+            },
+          ),
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _timelineFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final frames = snapshot.data ?? [];
+                final groupedData = _groupByHour(frames);
+
+                if (groupedData.isEmpty) {
+                  return const Center(
+                    child: Text('Không có dữ liệu cảm xúc cho ngày này'),
+                  );
+                }
+
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        'Ngày: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: groupedData.length,
+                        padding: const EdgeInsets.all(16),
+                        itemBuilder: (context, index) {
+                          final hourData = groupedData[index];
+                          final emotions =
+                              hourData['emotions'] as Map<String, dynamic>;
+                          final snapshots =
+                              hourData['snapshots']
+                                  as List<Map<String, dynamic>>;
+
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ExpansionTile(
+                              title: Text(
+                                hourData['hour'],
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(
+                                emotions.keys
+                                    .map((emotion) {
+                                      final count = emotions[emotion]['count'];
+                                      return '$emotion (x$count)';
+                                    })
+                                    .join(', '),
+                              ),
+                              children: [
+                                if (snapshots.isNotEmpty) ...[
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    child: Text(
+                                      'Snapshots:',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 100,
+                                    child: ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: snapshots.length,
+                                      itemBuilder: (context, snapIndex) {
+                                        final snapshot = snapshots[snapIndex];
+                                        return GestureDetector(
+                                          onTap: () => _showSnapshotDialog(
+                                            context,
+                                            snapshot,
+                                          ),
+                                          child: Container(
+                                            width: 80,
+                                            margin: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                color: Colors.grey,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                Expanded(
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.grey[200],
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                    ),
+                                                    child: const Icon(
+                                                      Icons.image,
+                                                      size: 32,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Text(
+                                                  snapshot['emotion'],
+                                                  style: const TextStyle(
+                                                    fontSize: 10,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  DateTime.parse(
+                                                        snapshot['timestamp'],
+                                                      )
+                                                      .toString()
+                                                      .split(' ')[1]
+                                                      .substring(0, 5),
+                                                  style: const TextStyle(
+                                                    fontSize: 10,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 8),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -247,17 +333,17 @@ class _AdminEmotionTimelinePageState extends State<AdminEmotionTimelinePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Snapshot - ${snapshot['emotion']}'),
+        title: Text("Snapshot - ${snapshot['emotion']}"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Thời gian: ${DateTime.parse(snapshot['timestamp'])}'),
+            Text("Thời gian: ${DateTime.parse(snapshot['timestamp'])}"),
             Text(
-              'Confidence: ${(snapshot['confidence'] * 100).toStringAsFixed(1)}%',
+              "Confidence: ${(snapshot['confidence'] * 100).toStringAsFixed(1)}%",
             ),
             if (snapshot['previous_emotion'] != null)
-              Text('Trước đó: ${snapshot['previous_emotion']}'),
-            Text('State Change: ${snapshot['state_change'] ? 'Có' : 'Không'}'),
+              Text("Trước đó: ${snapshot['previous_emotion']}"),
+            Text("State Change: ${snapshot['state_change'] ? 'Có' : 'Không'}"),
           ],
         ),
         actions: [

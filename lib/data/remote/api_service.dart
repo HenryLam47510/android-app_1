@@ -79,14 +79,48 @@ class ApiService {
 
       return {
         "totalStudents": 0,
-        "activeStudents": 0,
+        "totalUsers": 0,
+        "totalFrames": 0,
+        "totalImages": 0,
+        "totalSessions": 0,
+        "todayFrames": 0,
+        "totalAiAnalyses": 0,
         "attendanceToday": 0,
-        "totalEvents": 0,
-        "focusAlerts": 0,
-        "averageFocusScore": 0,
-        "recentEvents": [],
+        "recentActivities": [],
       };
     }
+  }
+
+  static Future<List<Map<String, dynamic>>> getAdminUsers() async {
+    final response = await http.get(Uri.parse('$baseUrl/admin/users'));
+    if (response.statusCode == 200) {
+      final List<dynamic> body = jsonDecode(response.body);
+      return body.map((item) => item as Map<String, dynamic>).toList();
+    }
+    throw Exception('Failed to load admin users');
+  }
+
+  static Future<List<Map<String, dynamic>>> getAdminUserDailyStats({
+    int? userId,
+    DateTime? date,
+  }) async {
+    final queryParameters = <String, String>{};
+    if (userId != null) {
+      queryParameters['user_id'] = userId.toString();
+    }
+    if (date != null) {
+      queryParameters['date'] = date.toIso8601String().split('T')[0];
+    }
+
+    final uri = Uri.parse('$baseUrl/admin/user-daily-stats').replace(
+      queryParameters: queryParameters.isNotEmpty ? queryParameters : null,
+    );
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final List<dynamic> body = jsonDecode(response.body);
+      return body.map((item) => item as Map<String, dynamic>).toList();
+    }
+    throw Exception('Failed to load admin user daily stats');
   }
 
   static Future<List<AdminVideo>> getAdminVideos() async {

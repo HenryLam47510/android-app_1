@@ -3,6 +3,7 @@ import '../../data/remote/api_service.dart';
 import '../../constants/app_state.dart';
 import '../home/auth_screen.dart'; // Import để chuyển hướng khi đăng xuất
 import 'admin_emotion_timeline_page.dart';
+import 'admin_user_daily_stats_page.dart';
 import 'student_management_page.dart';
 import 'class_management_page.dart';
 
@@ -67,35 +68,32 @@ class AdminDashboardPage extends StatelessWidget {
                     ),
                     _buildStatCard(
                       context,
-                      "Số lớp",
-                      stats['totalClasses']?.toString() ?? "0",
-                      Icons.class_,
+                      "Tổng Tài khoản",
+                      stats['totalUsers']?.toString() ?? "0",
+                      Icons.account_box,
                       Colors.indigo,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ClassManagementPage(),
-                        ),
-                      ),
-                      helper: 'Xem lớp, môn học, lịch học và quản lý buổi học',
+                      onTap: () {
+                        // Có thể mở trang quản lý tài khoản nếu có
+                      },
+                      helper: 'Số tài khoản người dùng trong hệ thống',
                     ),
                     _buildStatCard(
                       context,
-                      "Điểm danh hôm nay",
-                      stats['attendanceToday']?.toString() ?? "0",
-                      Icons.check_circle,
+                      "Ảnh hôm nay",
+                      stats['todayFrames']?.toString() ?? "0",
+                      Icons.photo_camera,
                       Colors.green,
                       onTap: () => _showAttendanceSummary(context),
-                      helper: 'Kiểm tra tình hình điểm danh hiện tại',
+                      helper: 'Số ảnh đã phân tích AI trong ngày hôm nay',
                     ),
                     _buildStatCard(
                       context,
-                      "Camera online",
-                      stats['camerasOnline']?.toString() ?? "0",
-                      Icons.videocam,
+                      "Ảnh đã lưu",
+                      stats['totalImages']?.toString() ?? "0",
+                      Icons.photo_library,
                       Colors.deepOrange,
                       onTap: () => _showCameraStatus(context),
-                      helper: 'Kiểm tra trạng thái camera và FPS',
+                      helper: 'Số ảnh đã lưu vào hệ thống từ AI',
                     ),
                     _buildStatCard(
                       context,
@@ -118,7 +116,7 @@ class AdminDashboardPage extends StatelessWidget {
                       Icons.auto_awesome,
                       Colors.purple,
                       onTap: () => _showAiDetail(context),
-                      helper: 'Xem tỷ lệ nhận diện AI và cấu hình ngưỡng',
+                      helper: 'Số lần mô hình AI đã xử lý khung hình',
                     ),
                   ],
                 ),
@@ -198,6 +196,19 @@ class AdminDashboardPage extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) => const AdminEmotionTimelinePage(),
+                    ),
+                  ),
+                ),
+
+                _buildMenuTile(
+                  context,
+                  "Thống kê ảnh theo user/ngày",
+                  "Xem số lượng khung hình và ảnh đã lưu theo từng tài khoản",
+                  Icons.grid_view,
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AdminUserDailyStatsPage(),
                     ),
                   ),
                 ),
