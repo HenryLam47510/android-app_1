@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../data/remote/api_service.dart';
-import '../../models/admin_video.dart';
 
 class AdminEmotionTimelinePage extends StatefulWidget {
   const AdminEmotionTimelinePage({super.key});
@@ -13,18 +12,12 @@ class AdminEmotionTimelinePage extends StatefulWidget {
 class _AdminEmotionTimelinePageState extends State<AdminEmotionTimelinePage> {
   late Future<List<Map<String, dynamic>>> _timelineFuture;
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
   DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _loadTimeline();
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.trim();
-      });
-    });
   }
 
   void _loadTimeline() {

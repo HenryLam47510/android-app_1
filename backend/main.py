@@ -131,15 +131,30 @@ def _should_save_frame(user_id: int, label: str) -> bool:
 
 def _save_frame_file(user_id: int, timestamp: str, label: str, image: Image.Image) -> str:
     try:
-        ts = int(datetime.fromisoformat(timestamp).timestamp() * 1000)
+        dt = datetime.fromisoformat(timestamp)
     except ValueError:
-        ts = int(datetime.utcnow().timestamp() * 1000)
+        dt = datetime.utcnow()
 
+    date_str = dt.strftime('%Y-%m-%d')
+    user_dir = os.path.join(BASE_DIR, 'uploads', str(user_id))
+    date_dir = os.path.join(user_dir, date_str)
+    images_dir = os.path.join(date_dir, 'images')
+    os.makedirs(images_dir, exist_ok=True)
+
+    ts = int(dt.timestamp() * 1000)
     safe_label = label.replace(' ', '_').lower()
-    file_name = f"frame_{user_id}_{ts}_{safe_label}.jpg"
-    stored_path = os.path.join(UPLOAD_FRAMES_DIR, file_name)
+    file_name = f"frame_{ts}_{safe_label}.jpg"
+    stored_path = os.path.join(images_dir, file_name)
     image.save(stored_path, format='JPEG', quality=85)
     return os.path.relpath(stored_path, BASE_DIR).replace('\\', '/')
+
+
+def _create_user_storage_dir(user_id: int) -> str:
+    user_dir = os.path.join(BASE_DIR, 'uploads', str(user_id))
+    today_dir = os.path.join(user_dir, datetime.utcnow().strftime('%Y-%m-%d'))
+    images_dir = os.path.join(today_dir, 'images')
+    os.makedirs(images_dir, exist_ok=True)
+    return user_dir
 
 
 def get_db_connection():
@@ -288,21 +303,20 @@ async def analyze_frame(
             frame_id = cursor.lastrowid
         conn.commit()
 
-    # Save image only on state change
+    # Always save image
     saved_path = None
-    if state_change:
-        try:
-            saved_path = _save_frame_file(user_id, timestamp, prediction['label'], image)
-            # Update image_path in DB
-            with get_db_connection() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute(
-                        "UPDATE frame_emotions SET image_path = %s WHERE id = %s",
-                        (saved_path, frame_id)
-                    )
-                conn.commit()
-        except Exception as exc:
-            print(f"Could not save frame image: {str(exc)}")
+    try:
+        saved_path = _save_frame_file(user_id, timestamp, prediction['label'], image)
+        # Update image_path in DB
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE frame_emotions SET image_path = %s WHERE id = %s",
+                    (saved_path, frame_id)
+                )
+            conn.commit()
+    except Exception as exc:
+        print(f"Could not save frame image: {str(exc)}")
 
     return {
         "frame_id": frame_id,
@@ -311,7 +325,7 @@ async def analyze_frame(
         "state_change": state_change,
         "previous_emotion": previous_emotion,
         "saved_image": saved_path is not None,
-        "image_path": saved_path,
+        "file_path": saved_path,
     }
 
 
@@ -398,6 +412,7 @@ def register_user(user: UserRegisterRequest):
                 )
                 conn.commit()
                 user_id = cursor.lastrowid
+                _create_user_storage_dir(user_id)
                 cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
                 row = cursor.fetchone()
                 return row

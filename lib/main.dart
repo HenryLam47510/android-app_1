@@ -8,9 +8,6 @@ import 'features/profile/profile_page.dart';
 import 'features/home/value_listenable_builder_2.dart';
 import 'constants/app_state.dart';
 import 'package:camera/camera.dart';
-import 'data/local/database_service.dart';
-import 'models/video_sync_item.dart';
-import 'data/local/compression_service.dart';
 
 List<CameraDescription> _cameras = [];
 
@@ -74,7 +71,6 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   bool _isMonitoring = false;
   CameraController? _controller;
-  DateTime? _startTime;
 
   Future<void> _toggleMonitoring() async {
     if (_isMonitoring) {
@@ -113,25 +109,6 @@ class _HomePageState extends State<HomePage> {
         print("Camera error: $e");
       }
     }
-  }
-
-  Future<void> _handleSavedVideo(String rawPath, DateTime endTime) async {
-    final String? compressedPath = await CompressionService.compressVideo(
-      rawPath,
-    );
-    final String finalPath = compressedPath ?? rawPath;
-
-    final int duration = _startTime != null
-        ? endTime.difference(_startTime!).inSeconds
-        : 0;
-
-    await DatabaseService.instance.insertVideo(
-      VideoSyncItem(
-        filePath: finalPath,
-        duration: duration,
-        createdAt: _startTime ?? DateTime.now(),
-      ),
-    );
   }
 
   @override

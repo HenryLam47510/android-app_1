@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:camera/camera.dart';
-import 'package:dio/dio.dart';
 import 'dart:async';
-import 'study_session.dart';
-import 'package:path/path.dart' as path;
+import '../../data/remote/api_service.dart';
 
 class StudyCapture {
   final String id;
@@ -43,7 +40,6 @@ class StudyPage extends StatefulWidget {
 
 class _StudyPageState extends State<StudyPage> {
   CameraController? _cameraController;
-  List<CameraDescription>? _cameras;
   bool _isCapturing = false;
   bool _isAnalyzing = false;
   Timer? _captureTimer;
@@ -52,25 +48,6 @@ class _StudyPageState extends State<StudyPage> {
 
   // Kết quả phân tích
   Map<String, dynamic>? _analysisResult;
-
-  // API
-  final Dio _dio = Dio();
-
-  /// Backend URL - có thể cấu hình
-  String get _backendUrl {
-    if (kIsWeb) {
-      return 'http://127.0.0.1:8000';
-    }
-    // Android emulator
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8000';
-    }
-    // iOS simulator
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return 'http://localhost:8000';
-    }
-    return 'http://127.0.0.1:8000';
-  }
 
   @override
   void initState() {
@@ -81,7 +58,6 @@ class _StudyPageState extends State<StudyPage> {
   Future<void> _initializeCamera() async {
     try {
       final cameras = await availableCameras();
-      setState(() => _cameras = cameras);
 
       if (cameras.isNotEmpty) {
         _cameraController = CameraController(
@@ -159,47 +135,44 @@ class _StudyPageState extends State<StudyPage> {
       final focusLevel = (response['confidence'] as num?)?.toDouble() ?? 0.5;
       final confidence = (response['confidence'] as num?)?.toDouble() ?? 0.0;
       final saved = response['saved_image'] == true;
-        final message = data['message']?.toString();
-        final backendPath = data['file_path']?.toString();
+      final message = response['message']?.toString();
+      final backendPath = response['file_path']?.toString();
 
-        _captureCount += 1;
-        final capture = StudyCapture(
-          id: 'cap_${_captureCount}',
-          number: _captureCount,
-          file: imageFile,
-          timestamp: DateTime.parse(timestamp),
-          label: label,
-          focusLevel: focusLevel,
-          confidence: confidence,
-          saved: saved,
-          backendPath: backendPath,
-          message: message,
+      _captureCount += 1;
+      final capture = StudyCapture(
+        id: 'cap_${_captureCount}',
+        number: _captureCount,
+        file: imageFile,
+        timestamp: DateTime.parse(timestamp),
+        label: label,
+        focusLevel: focusLevel,
+        confidence: confidence,
+        saved: saved,
+        backendPath: backendPath,
+        message: message,
+      );
+
+      setState(() {
+        _captures.insert(0, capture);
+        _analysisResult = {
+          'focusLevel': focusLevel,
+          'label': label,
+          'confidence': confidence,
+          'saved': saved,
+          'message': message,
+          'backendPath': backendPath,
+          'timestamp': timestamp,
+        };
+      });
+
+      if (saved) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ảnh ${_captureCount} đã lưu: $label')),
         );
-
-        setState(() {
-          _captures.insert(0, capture);
-          _analysisResult = {
-            'focusLevel': focusLevel,
-            'label': label,
-            'confidence': confidence,
-            'saved': saved,
-            'message': message,
-            'backendPath': backendPath,
-            'timestamp': timestamp,
-          };
-        });
-
-        if (saved) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Ảnh ${_captureCount} đã lưu: $label')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Bỏ qua ảnh trùng trạng thái: $label')),
-          );
-        }
       } else {
-        throw Exception('Upload frame thất bại: ${response.statusCode}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Bỏ qua ảnh trùng trạng thái: $label')),
+        );
       }
     } catch (e) {
       print('Lỗi upload frame: $e');
@@ -211,146 +184,6 @@ class _StudyPageState extends State<StudyPage> {
         setState(() => _isAnalyzing = false);
       }
     }
-  }
-
-  void _showResultDialog() {
-    if (_analysisResult == null) return;
-
-    final score = (_analysisResult!['concentrationScore'] as num).toDouble();
-    final status = _analysisResult!['focusStatus'] as String;
-    final emoji = _analysisResult!['focusEmoji'] as String;
-    final emotion = _analysisResult!['dominantEmotion'] as String;
-
-    Color statusColor = Colors.grey;
-
-    if (score > 0.7) {
-      statusColor = Colors.green;
-    } else if (score > 0.5) {
-      statusColor = Colors.amber;
-    } else {
-      statusColor = Colors.red;
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Kết quả phân tích'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Column(
-                children: [
-                  Text(emoji, style: const TextStyle(fontSize: 48)),
-                  const SizedBox(height: 10),
-                  Text(
-                    '${(score * 100).toStringAsFixed(1)}%',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: statusColor,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    status,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: statusColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Cảm xúc chính: $emotion',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tổng frame: ${_analysisResult!['frameCount']}',
-                    style: const TextStyle(fontSize: 13, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Phân tích chi tiết:',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  ..._buildEmotionBreakdown(),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _resetAndRecord();
-            },
-            child: const Text('Quay lại'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildEmotionBreakdown() {
-    final breakdown =
-        _analysisResult!['emotionBreakdown'] as Map<String, dynamic>;
-    if (breakdown.isEmpty) {
-      return [const Text('Không có dữ liệu', style: TextStyle(fontSize: 12))];
-    }
-
-    return breakdown.entries
-        .map(
-          (e) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(e.key, style: const TextStyle(fontSize: 12)),
-                Text(
-                  '${(e.value as num).toStringAsFixed(1)}%',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        )
-        .toList();
-  }
-
-  void _resetAndRecord() {
-    setState(() {
-      _analysisResult = null;
-    });
   }
 
   @override

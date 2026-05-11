@@ -166,24 +166,22 @@ class AdminDashboardPage extends StatelessWidget {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                ...((stats['recentActivities'] as List<dynamic>?) ?? [])
-                    .map(
-                      (activity) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.fiber_manual_record,
-                              size: 10,
-                              color: Colors.indigo,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(activity.toString())),
-                          ],
+                ...((stats['recentActivities'] as List<dynamic>?) ?? []).map(
+                  (activity) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.fiber_manual_record,
+                          size: 10,
+                          color: Colors.indigo,
                         ),
-                      ),
-                    )
-                    .toList(),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(activity.toString())),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 14),
                 const Text(
                   "Quản lý hệ thống",
@@ -303,27 +301,6 @@ class AdminDashboardPage extends StatelessWidget {
 - Điểm trung bình mô hình: 87%
 - Các buổi phân tích gần đây: 8
 - Cấu hình ngưỡng nhận diện khuôn mặt: 75%'''),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showStorageInfo(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Dung lượng'),
-        content: const Text('''Dung lượng hiện tại: 12.5 GB
-- Video gốc: 8.2 GB
-- Dữ liệu AI: 2.1 GB
-- Cache: 2.2 GB
-
-Bạn có thể dọn dẹp cache khi cần giải phóng bộ nhớ.'''),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

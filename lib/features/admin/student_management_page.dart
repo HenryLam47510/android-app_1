@@ -147,7 +147,7 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
 
   Future<void> _importExcel() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['xlsx', 'xls'],
       );
@@ -198,7 +198,7 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
 
           try {
             // Expected columns: Tên, Email, SĐT, Lớp, Trạng thái
-            final name = row.length > 0
+            final name = row.isNotEmpty
                 ? row[0]?.value?.toString().trim() ?? ''
                 : '';
             final email = row.length > 1
