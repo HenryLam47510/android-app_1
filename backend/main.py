@@ -1,6 +1,7 @@
 import glob
 import os
 import io
+import hashlib
 import torch
 import uvicorn
 import pymysql
@@ -11,7 +12,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from PIL import Image
 from typing import List, Optional, Dict
-from datetime import datetime
+from datetime import datetime, timedelta
 from video_processor import VideoProcessor
 from concentration_calculator import ConcentrationCalculator
 
@@ -96,32 +97,42 @@ def _predict_image(img: Image.Image) -> Dict[str, object]:
     }
 
 
-def _get_recent_frame_states(user_id: int, count: int = 5) -> List[str]:
-    pattern = os.path.join(UPLOAD_FRAMES_DIR, f"frame_{user_id}_*.jpg")
-    frame_files = sorted(glob.glob(pattern), key=os.path.getmtime, reverse=True)
-    states = []
-
-    for file_path in frame_files:
-        base_name = os.path.basename(file_path)
-        parts = base_name.split("_")
-        if len(parts) < 4:
-            continue
-        state = os.path.splitext(parts[-1])[0]
-        states.append(state)
-        if len(states) >= count:
-            break
-
-    return states
+def _get_recent_frame_records(user_id: int, limit: int = 5):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT id, emotion, timestamp FROM frame_emotions WHERE user_id = %s ORDER BY timestamp DESC LIMIT %s",
+                (user_id, limit),
+            )
+            return cursor.fetchall()
 
 
-def _should_save_frame(user_id: int, label: str) -> bool:
-    recent_states = _get_recent_frame_states(user_id, 5)
-    if not recent_states:
+def _should_save_frame(user_id: int, label: str, timestamp: datetime) -> bool:
+    recent_frames = _get_recent_frame_records(user_id, 5)
+    if not recent_frames:
         return True
 
+    try:
+        last_timestamp = recent_frames[0]['timestamp']
+        if isinstance(last_timestamp, str):
+            last_timestamp = datetime.fromisoformat(last_timestamp)
+    except Exception:
+        last_timestamp = None
+
+    if last_timestamp is not None:
+        delta = (timestamp - last_timestamp).total_seconds()
+        if delta < 3:
+            return False
+
     same_count = 0
-    for state in recent_states:
-        if state == label:
+    window_start = timestamp - timedelta(seconds=30)
+    for frame in recent_frames:
+        frame_timestamp = frame['timestamp']
+        if isinstance(frame_timestamp, str):
+            frame_timestamp = datetime.fromisoformat(frame_timestamp)
+        if frame_timestamp < window_start:
+            break
+        if frame['emotion'] == label:
             same_count += 1
         else:
             break
@@ -169,6 +180,33 @@ def get_db_connection():
     )
 
 
+def _gravatar_url(email: Optional[str]) -> str:
+    if not email:
+        return "https://www.gravatar.com/avatar/?d=identicon&s=200"
+    digest = hashlib.md5(email.strip().lower().encode('utf-8')).hexdigest()
+    return f"https://www.gravatar.com/avatar/{digest}?d=identicon&s=200"
+
+
+def _avatar_directory(user_id: int) -> str:
+    path = os.path.join(BASE_DIR, 'uploads', 'avatars', str(user_id))
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def _avatar_file_path(user_id: int) -> Optional[str]:
+    avatar_dir = os.path.join(BASE_DIR, 'uploads', 'avatars', str(user_id))
+    if not os.path.exists(avatar_dir):
+        return None
+    matches = glob.glob(os.path.join(avatar_dir, 'avatar.*'))
+    return matches[0] if matches else None
+
+
+def _avatar_url_for_user(user_id: int, email: Optional[str]) -> str:
+    if _avatar_file_path(user_id) is not None:
+        return f"/admin/users/{user_id}/avatar"
+    return _gravatar_url(email)
+
+
 def _load_video_segments(cursor, video_id: int):
     cursor.execute(
         "SELECT * FROM video_segments WHERE video_id = %s ORDER BY segment_number ASC",
@@ -188,12 +226,27 @@ class UserLoginRequest(BaseModel):
     password: str
 
 
+class AdminUserCreateRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+    role: str = 'student'
+
+
+class AdminUserUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    role: Optional[str] = None
+
+
 class UserResponse(BaseModel):
     id: int
     name: str
     email: str
     role: str
     created_at: datetime
+    avatar_url: Optional[str] = None
 
 
 class VideoSegmentResponse(BaseModel):
@@ -285,12 +338,29 @@ async def analyze_frame(
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid image file: {str(exc)}")
 
-    prediction = _predict_image(image)
-    recent_states = _get_recent_frame_states(user_id, 1)  # Get last state
-    previous_emotion = recent_states[0] if recent_states else None
-    state_change = previous_emotion != prediction['label']
+    try:
+        timestamp_dt = datetime.fromisoformat(timestamp)
+    except ValueError:
+        timestamp_dt = datetime.utcnow()
 
-    # Always save to DB
+    prediction = _predict_image(image)
+    previous_frame = _get_recent_frame_records(user_id, 1)
+    previous_emotion = previous_frame[0]['emotion'] if previous_frame else None
+    state_change = previous_emotion != prediction['label']
+    should_save = _should_save_frame(user_id, prediction['label'], timestamp_dt)
+
+    if not should_save:
+        return {
+            "frame_id": None,
+            "emotion": prediction['label'],
+            "confidence": prediction['confidence'],
+            "state_change": state_change,
+            "previous_emotion": previous_emotion,
+            "saved_image": False,
+            "saved_to_db": False,
+            "skipped_reason": "Duplicate or too frequent frame",
+        }
+
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(
@@ -298,21 +368,19 @@ async def analyze_frame(
                 INSERT INTO frame_emotions (user_id, emotion, confidence, timestamp, state_change, previous_emotion)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 """,
-                (user_id, prediction['label'], prediction['confidence'], timestamp, state_change, previous_emotion)
+                (user_id, prediction['label'], prediction['confidence'], timestamp_dt, state_change, previous_emotion),
             )
             frame_id = cursor.lastrowid
         conn.commit()
 
-    # Always save image
     saved_path = None
     try:
         saved_path = _save_frame_file(user_id, timestamp, prediction['label'], image)
-        # Update image_path in DB
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     "UPDATE frame_emotions SET image_path = %s WHERE id = %s",
-                    (saved_path, frame_id)
+                    (saved_path, frame_id),
                 )
             conn.commit()
     except Exception as exc:
@@ -325,8 +393,34 @@ async def analyze_frame(
         "state_change": state_change,
         "previous_emotion": previous_emotion,
         "saved_image": saved_path is not None,
+        "saved_to_db": True,
         "file_path": saved_path,
     }
+
+
+@app.get("/frame-emotion/{frame_id}/image")
+def get_frame_image(frame_id: int):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT image_path FROM frame_emotions WHERE id = %s",
+                    (frame_id,),
+                )
+                row = cursor.fetchone()
+        if not row or not row.get('image_path'):
+            raise HTTPException(status_code=404, detail='Image not found')
+
+        image_path = row['image_path']
+        absolute_path = os.path.join(BASE_DIR, image_path)
+        if not os.path.exists(absolute_path):
+            raise HTTPException(status_code=404, detail='Image file not found')
+
+        return FileResponse(absolute_path, media_type='image/jpeg')
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 def _analyze_video_file(video_path: str) -> Dict[str, object]:
@@ -823,7 +917,150 @@ def admin_users():
                     "SELECT id, name, email, role FROM users ORDER BY name ASC"
                 )
                 users = cursor.fetchall()
+                for user in users:
+                    user['avatar_url'] = _avatar_url_for_user(
+                        user['id'], user.get('email')
+                    )
                 return users
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/admin/users", response_model=UserResponse)
+def admin_create_user(user: AdminUserCreateRequest):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT id FROM users WHERE email = %s", (user.email,))
+                if cursor.fetchone():
+                    raise HTTPException(status_code=400, detail="Email đã tồn tại")
+                cursor.execute(
+                    "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
+                    (user.name, user.email, user.password, user.role),
+                )
+                conn.commit()
+                user_id = cursor.lastrowid
+                cursor.execute(
+                    "SELECT id, name, email, role, created_at FROM users WHERE id = %s",
+                    (user_id,),
+                )
+                row = cursor.fetchone()
+                if row:
+                    row['avatar_url'] = _avatar_url_for_user(row['id'], row.get('email'))
+                    return row
+                raise HTTPException(status_code=500, detail="Không thể tạo tài khoản")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/admin/users/{user_id}/avatar")
+def upload_admin_user_avatar(user_id: int, avatar: UploadFile = File(...)):
+    try:
+        if not avatar.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail='File phải là ảnh')
+
+        avatar_dir = _avatar_directory(user_id)
+        for existing in glob.glob(os.path.join(avatar_dir, 'avatar.*')):
+            try:
+                os.remove(existing)
+            except OSError:
+                pass
+
+        extension = os.path.splitext(avatar.filename)[1] or '.png'
+        saved_path = os.path.join(avatar_dir, f'avatar{extension}')
+        with open(saved_path, 'wb') as f:
+            f.write(avatar.file.read())
+
+        return {'avatar_url': _avatar_url_for_user(user_id, None)}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/admin/users/{user_id}/avatar")
+def get_admin_user_avatar(user_id: int):
+    avatar_path = _avatar_file_path(user_id)
+    if not avatar_path or not os.path.exists(avatar_path):
+        raise HTTPException(status_code=404, detail='Avatar không tồn tại')
+    return FileResponse(avatar_path)
+
+
+@app.put("/admin/users/{user_id}", response_model=UserResponse)
+def admin_update_user(user_id: int, user: AdminUserUpdateRequest):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+                existing = cursor.fetchone()
+                if not existing:
+                    raise HTTPException(status_code=404, detail="Tài khoản không tồn tại")
+
+                updates = []
+                values = []
+                if user.name is not None:
+                    updates.append("name = %s")
+                    values.append(user.name)
+                if user.email is not None:
+                    updates.append("email = %s")
+                    values.append(user.email)
+                if user.password is not None and user.password != "":
+                    updates.append("password = %s")
+                    values.append(user.password)
+                if user.role is not None:
+                    updates.append("role = %s")
+                    values.append(user.role)
+
+                if updates:
+                    values.append(user_id)
+                    cursor.execute(
+                        f"UPDATE users SET {', '.join(updates)} WHERE id = %s",
+                        tuple(values),
+                    )
+                    conn.commit()
+
+                cursor.execute(
+                    "SELECT id, name, email, role, created_at FROM users WHERE id = %s",
+                    (user_id,),
+                )
+                row = cursor.fetchone()
+                if row:
+                    row['avatar_url'] = _gravatar_url(row.get('email'))
+                    return row
+                raise HTTPException(status_code=500, detail="Không thể cập nhật tài khoản")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.delete("/admin/users/{user_id}")
+def admin_delete_user(user_id: int):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+                conn.commit()
+                if cursor.rowcount == 0:
+                    raise HTTPException(status_code=404, detail="Tài khoản không tồn tại")
+
+        avatar_dir = os.path.join(BASE_DIR, 'uploads', 'avatars', str(user_id))
+        if os.path.exists(avatar_dir):
+            for existing in glob.glob(os.path.join(avatar_dir, '*')):
+                try:
+                    os.remove(existing)
+                except OSError:
+                    pass
+            try:
+                os.rmdir(avatar_dir)
+            except OSError:
+                pass
+
+        return {"success": True}
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
@@ -883,7 +1120,16 @@ def get_emotion_timeline(user_id: int, date: str = None):
                 query += " ORDER BY timestamp DESC"
                 cursor.execute(query, params)
                 frames = cursor.fetchall()
-                return frames
+
+        for frame in frames:
+            if frame.get('image_path'):
+                frame['image_url'] = f"/frame-emotion/{frame['id']}/image"
+            else:
+                frame['image_url'] = None
+            timestamp_val = frame.get('timestamp')
+            if timestamp_val is not None and not isinstance(timestamp_val, str):
+                frame['timestamp'] = timestamp_val.isoformat()
+        return frames
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
