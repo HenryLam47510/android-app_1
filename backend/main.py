@@ -1,3 +1,4 @@
+import glob
 import os
 import io
 import torch
@@ -23,9 +24,11 @@ app = FastAPI()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Tạo thư mục uploads/segments khi khởi động
+# Tạo thư mục uploads/segments và uploads/frames khi khởi động
 UPLOAD_SEGMENTS_DIR = os.path.join(BASE_DIR, 'uploads', 'segments')
+UPLOAD_FRAMES_DIR = os.path.join(BASE_DIR, 'uploads', 'frames')
 os.makedirs(UPLOAD_SEGMENTS_DIR, exist_ok=True)
+os.makedirs(UPLOAD_FRAMES_DIR, exist_ok=True)
 
 # Cho phép tất cả các nguồn truy cập (Web/Mobile/Desktop)
 app.add_middleware(
@@ -65,6 +68,78 @@ def load_model():
             model = None
 
     return model
+
+
+def _predict_image(img: Image.Image) -> Dict[str, object]:
+    loaded_model = load_model()
+    if loaded_model is None:
+        raise HTTPException(status_code=500, detail="Model is not available")
+
+    results = loaded_model(img)
+    result = results[0] if isinstance(results, list) else results
+    boxes = result.boxes
+
+    if boxes is not None and len(boxes) > 0:
+        cls_id = int(boxes.cls[0])
+        confidence = float(boxes.conf[0])
+        label = result.names[cls_id]
+    else:
+        label = "neutral"
+        confidence = 0.0
+
+    focus_score = confidence if label == "focus" else (1 - confidence)
+
+    return {
+        "focus_level": round(focus_score, 2),
+        "label": label,
+        "confidence": round(confidence, 2),
+    }
+
+
+def _get_recent_frame_states(user_id: int, count: int = 5) -> List[str]:
+    pattern = os.path.join(UPLOAD_FRAMES_DIR, f"frame_{user_id}_*.jpg")
+    frame_files = sorted(glob.glob(pattern), key=os.path.getmtime, reverse=True)
+    states = []
+
+    for file_path in frame_files:
+        base_name = os.path.basename(file_path)
+        parts = base_name.split("_")
+        if len(parts) < 4:
+            continue
+        state = os.path.splitext(parts[-1])[0]
+        states.append(state)
+        if len(states) >= count:
+            break
+
+    return states
+
+
+def _should_save_frame(user_id: int, label: str) -> bool:
+    recent_states = _get_recent_frame_states(user_id, 5)
+    if not recent_states:
+        return True
+
+    same_count = 0
+    for state in recent_states:
+        if state == label:
+            same_count += 1
+        else:
+            break
+
+    return same_count < 5
+
+
+def _save_frame_file(user_id: int, timestamp: str, label: str, image: Image.Image) -> str:
+    try:
+        ts = int(datetime.fromisoformat(timestamp).timestamp() * 1000)
+    except ValueError:
+        ts = int(datetime.utcnow().timestamp() * 1000)
+
+    safe_label = label.replace(' ', '_').lower()
+    file_name = f"frame_{user_id}_{ts}_{safe_label}.jpg"
+    stored_path = os.path.join(UPLOAD_FRAMES_DIR, file_name)
+    image.save(stored_path, format='JPEG', quality=85)
+    return os.path.relpath(stored_path, BASE_DIR).replace('\\', '/')
 
 
 def get_db_connection():
@@ -179,30 +254,66 @@ def register_get():
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     request_object_content = await file.read()
-    img = Image.open(io.BytesIO(request_object_content))
+    img = Image.open(io.BytesIO(request_object_content)).convert("RGB")
+    return _predict_image(img)
 
-    loaded_model = load_model()
-    if loaded_model is None:
-        raise HTTPException(status_code=500, detail="Model is not available")
 
-    results = loaded_model(img)
+@app.post("/analyze-frame")
+async def analyze_frame(
+    user_id: int = Form(...),
+    timestamp: str = Form(...),
+    file: UploadFile = File(...),
+):
+    content = await file.read()
+    try:
+        image = Image.open(io.BytesIO(content)).convert("RGB")
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid image file: {str(exc)}")
 
-    result = results[0]
-    boxes = result.boxes
+    prediction = _predict_image(image)
+    recent_states = _get_recent_frame_states(user_id, 1)  # Get last state
+    previous_emotion = recent_states[0] if recent_states else None
+    state_change = previous_emotion != prediction['label']
 
-    if boxes is not None and len(boxes) > 0:
-        cls_id = int(boxes.cls[0])
-        confidence = float(boxes.conf[0])
-        label = result.names[cls_id]
-    else:
-        return {"focus_level": 0.5, "label": "neutral"}
+    # Always save to DB
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO frame_emotions (user_id, emotion, confidence, timestamp, state_change, previous_emotion)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (user_id, prediction['label'], prediction['confidence'], timestamp, state_change, previous_emotion)
+            )
+            frame_id = cursor.lastrowid
+        conn.commit()
 
-    focus_score = confidence if label == "focus" else (1 - confidence)
+    # Save image only on state change
+    saved_path = None
+    if state_change:
+        try:
+            saved_path = _save_frame_file(user_id, timestamp, prediction['label'], image)
+            # Update image_path in DB
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        "UPDATE frame_emotions SET image_path = %s WHERE id = %s",
+                        (saved_path, frame_id)
+                    )
+                conn.commit()
+        except Exception as exc:
+            print(f"Could not save frame image: {str(exc)}")
 
     return {
-        "focus_level": round(focus_score, 2),
-        "label": label
+        "frame_id": frame_id,
+        "emotion": prediction['label'],
+        "confidence": prediction['confidence'],
+        "state_change": state_change,
+        "previous_emotion": previous_emotion,
+        "saved_image": saved_path is not None,
+        "image_path": saved_path,
     }
+
 
 def _analyze_video_file(video_path: str) -> Dict[str, object]:
     loaded_model = load_model()
@@ -645,17 +756,37 @@ def admin_dashboard():
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
-                cursor.execute("SELECT COUNT(*) AS total_videos FROM videos")
-                videos = cursor.fetchone()
+                cursor.execute("SELECT COUNT(*) AS total_frames FROM frame_emotions")
+                frames = cursor.fetchone()
                 cursor.execute("SELECT COUNT(*) AS total_sessions FROM study_sessions")
                 sessions = cursor.fetchone()
                 return {
-                    "totalVideos": videos['total_videos'],
+                    "totalFrames": frames['total_frames'],
                     "totalSessions": sessions['total_sessions'],
                 }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
+@app.get("/admin/emotion-timeline/{user_id}")
+def get_emotion_timeline(user_id: int, date: str = None):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                query = """
+                SELECT id, emotion, confidence, timestamp, image_path, state_change, previous_emotion
+                FROM frame_emotions
+                WHERE user_id = %s
+                """
+                params = [user_id]
+                if date:
+                    query += " AND DATE(timestamp) = %s"
+                    params.append(date)
+                query += " ORDER BY timestamp DESC"
+                cursor.execute(query, params)
+                frames = cursor.fetchall()
+                return frames
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

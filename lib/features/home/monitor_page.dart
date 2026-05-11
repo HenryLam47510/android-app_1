@@ -20,13 +20,16 @@ class MonitorPage extends StatefulWidget {
 }
 
 class _MonitorPageState extends State<MonitorPage> {
-  double _focusLevel = 0.9; // Giá trị mặc định 90%
+  double _focusLevel = 0.5; // Giá trị mặc định 50%
+  String _focusLabel = 'neutral';
+  double _confidence = 0.0;
   Timer? _timer;
+  final int _userId = 1;
 
   @override
   void didUpdateWidget(MonitorPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Nếu bắt đầu quay video, kích hoạt timer mỗi 15s
+    // Nếu bắt đầu theo dõi, kích hoạt timer mỗi 3s
     if (widget.isMonitoring && !oldWidget.isMonitoring) {
       _startAITracking();
     } else if (!widget.isMonitoring && oldWidget.isMonitoring) {
@@ -43,8 +46,8 @@ class _MonitorPageState extends State<MonitorPage> {
   void _startAITracking() {
     // Chạy ngay lần đầu tiên
     _runAIPrediction();
-    // Sau đó lặp lại mỗi 15 giây
-    _timer = Timer.periodic(const Duration(seconds: 15), (timer) {
+    // Sau đó lặp lại mỗi 3 giây
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
       _runAIPrediction();
     });
   }
@@ -60,16 +63,25 @@ class _MonitorPageState extends State<MonitorPage> {
     }
 
     try {
-      // 1. Chụp ảnh màn hình từ camera (ngầm)
       final XFile image = await widget.controller!.takePicture();
+      final String timestamp = DateTime.now().toIso8601String();
+      final Map<String, dynamic> response = await ApiService.analyzeFrame(
+        image,
+        userId: _userId,
+        timestamp: timestamp,
+      );
 
-      // 2. Gửi ảnh lên Backend AI và nhận % tập trung
-      final double result = await ApiService.predictFocus(image);
+      final double focusLevel = (response['confidence'] as num)
+          .toDouble()
+          .clamp(0.0, 1.0);
+      final String label = response['emotion'] as String;
+      final double confidence = (response['confidence'] as num).toDouble();
 
-      // 3. Cập nhật thanh tiến độ
       if (mounted) {
         setState(() {
-          _focusLevel = result;
+          _focusLevel = focusLevel;
+          _focusLabel = label;
+          _confidence = confidence;
         });
       }
     } catch (e) {
@@ -268,7 +280,9 @@ class _MonitorPageState extends State<MonitorPage> {
             const Spacer(),
             if (monitoring)
               Text(
-                _focusLevel > 0.7 ? "🔥 Tập trung tốt" : "⚠️ Cần chú ý",
+                _focusLabel == 'neutral'
+                    ? (_focusLevel > 0.7 ? "🔥 Tập trung tốt" : "⚠️ Cần chú ý")
+                    : "$_focusLabel (${(_confidence * 100).toInt()}%)",
                 style: TextStyle(
                   color: _focusLevel > 0.7 ? Colors.orange : Colors.red,
                   fontWeight: FontWeight.bold,
@@ -318,9 +332,9 @@ class _MonitorPageState extends State<MonitorPage> {
           backgroundColor: Colors.grey.withOpacity(0.2),
         ),
         const SizedBox(height: 4),
-        const Text(
-          "Cập nhật mỗi 15 giây",
-          style: TextStyle(fontSize: 12, color: Colors.grey),
+        Text(
+          monitoring ? "Cập nhật mỗi 3 giây" : "Bật giám sát để bắt đầu",
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
         ),
       ],
     );

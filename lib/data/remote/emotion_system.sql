@@ -147,6 +147,24 @@ INSERT INTO `videos` (`id`, `user_id`, `file_path`, `duration`, `status`, `creat
 -- --------------------------------------------------------
 
 --
+-- Cấu trúc bảng cho bảng `frame_emotions`
+--
+
+CREATE TABLE `frame_emotions` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `emotion` varchar(50) NOT NULL,
+  `confidence` float NOT NULL,
+  `timestamp` datetime NOT NULL,
+  `image_path` varchar(255) DEFAULT NULL,
+  `state_change` tinyint(1) DEFAULT 0,
+  `previous_emotion` varchar(50) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Cấu trúc bảng cho bảng `video_segments`
 --
 
@@ -204,6 +222,14 @@ ALTER TABLE `activity_logs`
 ALTER TABLE `emotions`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_emotions_video` (`video_id`);
+
+--
+-- Chỉ mục cho bảng `frame_emotions`
+--
+ALTER TABLE `frame_emotions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_frame_emotions_user` (`user_id`),
+  ADD KEY `idx_frame_emotions_timestamp` (`timestamp`);
 
 --
 -- Chỉ mục cho bảng `notifications`

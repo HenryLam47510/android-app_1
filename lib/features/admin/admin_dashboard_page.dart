@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/remote/api_service.dart';
 import '../../constants/app_state.dart';
 import '../home/auth_screen.dart'; // Import để chuyển hướng khi đăng xuất
-import 'admin_video_list_page.dart';
+import 'admin_emotion_timeline_page.dart';
 import 'student_management_page.dart';
 import 'class_management_page.dart';
 
@@ -99,17 +99,17 @@ class AdminDashboardPage extends StatelessWidget {
                     ),
                     _buildStatCard(
                       context,
-                      "Tổng Video",
-                      stats['totalVideos']?.toString() ?? "0",
-                      Icons.video_library,
-                      Colors.blue,
+                      "Timeline Cảm Xúc",
+                      stats['totalFrames']?.toString() ?? "0",
+                      Icons.timeline,
+                      Colors.purple,
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const AdminVideoListPage(),
+                          builder: (_) => const AdminEmotionTimelinePage(),
                         ),
                       ),
-                      helper: 'Danh sách video upload/quét và segment',
+                      helper: 'Xem timeline cảm xúc theo giờ với snapshots',
                     ),
                     _buildStatCard(
                       context,
@@ -193,13 +193,13 @@ class AdminDashboardPage extends StatelessWidget {
 
                 _buildMenuTile(
                   context,
-                  "Quản lý Video & Segment",
-                  "Xem danh sách, chi tiết và dọn dẹp dữ liệu",
-                  Icons.video_settings,
+                  "Quản lý Timeline & Snapshots",
+                  "Xem timeline cảm xúc, snapshots và quản lý dữ liệu",
+                  Icons.timeline,
                   () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const AdminVideoListPage(),
+                      builder: (_) => const AdminEmotionTimelinePage(),
                     ),
                   ),
                 ),

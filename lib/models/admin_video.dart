@@ -85,3 +85,35 @@ class AiResult {
 
   AiResult({required this.timestamp, required this.emotion});
 }
+
+class FrameEmotion {
+  final int id;
+  final String emotion;
+  final double confidence;
+  final DateTime timestamp;
+  final String? imagePath;
+  final bool stateChange;
+  final String? previousEmotion;
+
+  FrameEmotion({
+    required this.id,
+    required this.emotion,
+    required this.confidence,
+    required this.timestamp,
+    this.imagePath,
+    required this.stateChange,
+    this.previousEmotion,
+  });
+
+  factory FrameEmotion.fromJson(Map<String, dynamic> json) {
+    return FrameEmotion(
+      id: json['id'] as int,
+      emotion: json['emotion'] as String,
+      confidence: (json['confidence'] as num).toDouble(),
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      imagePath: json['image_path'] as String?,
+      stateChange: json['state_change'] as bool,
+      previousEmotion: json['previous_emotion'] as String?,
+    );
+  }
+}

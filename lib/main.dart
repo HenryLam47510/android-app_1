@@ -78,13 +78,6 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _toggleMonitoring() async {
     if (_isMonitoring) {
-      final XFile? videoFile = await _controller?.stopVideoRecording();
-      final DateTime endTime = DateTime.now();
-
-      if (videoFile != null) {
-        _handleSavedVideo(videoFile.path, endTime);
-      }
-
       await _controller?.dispose();
       setState(() {
         _isMonitoring = false;
@@ -113,9 +106,6 @@ class _HomePageState extends State<HomePage> {
 
       try {
         await _controller!.initialize();
-        await _controller!.startVideoRecording();
-        _startTime = DateTime.now();
-
         setState(() {
           _isMonitoring = true;
         });

@@ -35,22 +35,58 @@ class ApiService {
     return 0.5; // Trả về mặc định nếu lỗi
   }
 
+  static Future<Map<String, dynamic>> analyzeFrame(
+    XFile imageFile, {
+    int userId = 1,
+    String? timestamp,
+  }) async {
+    try {
+      final bytes = await imageFile.readAsBytes();
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$aiBaseUrl/analyze-frame'),
+      );
+      request.fields['user_id'] = userId.toString();
+      request.fields['timestamp'] =
+          timestamp ?? DateTime.now().toIso8601String();
+      request.files.add(
+        http.MultipartFile.fromBytes('file', bytes, filename: imageFile.name),
+      );
+
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        final responseData = await response.stream.bytesToString();
+        return jsonDecode(responseData) as Map<String, dynamic>;
+      }
+      throw Exception('Analyze frame failed: ${response.statusCode}');
+    } catch (e) {
+      print('AI analyzeFrame error: $e');
+      rethrow;
+    }
+  }
+
   static Future<Map<String, dynamic>> getAdminDashboardStats() async {
-    await Future.delayed(const Duration(seconds: 1));
-    return {
-      "totalVideos": 150,
-      "totalStorage": "12.5 GB",
-      "totalAiAnalyses": 1240,
-      "totalStudents": 520,
-      "totalClasses": 18,
-      "attendanceToday": 324,
-      "camerasOnline": 12,
-      "recentActivities": [
-        'AI đã nhận diện 45 sinh viên trong hôm nay',
-        'Tối ưu ngưỡng nhận diện mặt thành công',
-        'Video mới được upload từ camera C3',
-      ],
-    };
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/admin/dashboard'));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+
+      throw Exception('Failed to load dashboard');
+    } catch (e) {
+      print("Dashboard API Error: $e");
+
+      return {
+        "totalStudents": 0,
+        "activeStudents": 0,
+        "attendanceToday": 0,
+        "totalEvents": 0,
+        "focusAlerts": 0,
+        "averageFocusScore": 0,
+        "recentEvents": [],
+      };
+    }
   }
 
   static Future<List<AdminVideo>> getAdminVideos() async {
@@ -60,6 +96,23 @@ class ApiService {
       return body.map((item) => AdminVideo.fromJson(item)).toList();
     }
     throw Exception('Failed to load admin videos');
+  }
+
+  static Future<List<Map<String, dynamic>>> getEmotionTimeline(
+    int userId, {
+    DateTime? date,
+  }) async {
+    final uri = Uri.parse('$baseUrl/admin/emotion-timeline/$userId').replace(
+      queryParameters: date != null
+          ? {'date': date.toIso8601String().split('T')[0]}
+          : null,
+    );
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final List<dynamic> body = jsonDecode(response.body);
+      return body.map((item) => item as Map<String, dynamic>).toList();
+    }
+    throw Exception('Failed to load emotion timeline');
   }
 
   /// Lấy lịch sử học tập từ backend

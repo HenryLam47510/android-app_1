@@ -6,21 +6,29 @@ import 'dart:async';
 import 'study_session.dart';
 import 'package:path/path.dart' as path;
 
-class StudySegment {
+class StudyCapture {
   final String id;
   final int number;
   final XFile file;
-  final DateTime startTime;
-  final DateTime endTime;
-  final int durationSeconds;
+  final DateTime timestamp;
+  final String label;
+  final double focusLevel;
+  final double confidence;
+  final bool saved;
+  final String? backendPath;
+  final String? message;
 
-  StudySegment({
+  StudyCapture({
     required this.id,
     required this.number,
     required this.file,
-    required this.startTime,
-    required this.endTime,
-    required this.durationSeconds,
+    required this.timestamp,
+    required this.label,
+    required this.focusLevel,
+    required this.confidence,
+    required this.saved,
+    this.backendPath,
+    this.message,
   });
 
   String get filePath => file.path;
@@ -36,19 +44,14 @@ class StudyPage extends StatefulWidget {
 class _StudyPageState extends State<StudyPage> {
   CameraController? _cameraController;
   List<CameraDescription>? _cameras;
-  bool _isRecording = false;
+  bool _isCapturing = false;
   bool _isAnalyzing = false;
-  int _recordingCountdown = 0;
-  Timer? _countdownTimer;
-
-  DateTime? _segmentStartTime;
-  int _segmentCount = 0;
-  int? _videoSessionId;
-  final List<StudySegment> _segments = [];
+  Timer? _captureTimer;
+  int _captureCount = 0;
+  final List<StudyCapture> _captures = [];
 
   // Kết quả phân tích
   Map<String, dynamic>? _analysisResult;
-  RealTimeFocusScorer? _focusScorer;
 
   // API
   final Dio _dio = Dio();
@@ -99,113 +102,114 @@ class _StudyPageState extends State<StudyPage> {
     }
   }
 
-  Future<void> _toggleRecording() async {
+  Future<void> _toggleCapture() async {
     if (!_cameraController!.value.isInitialized) return;
 
     try {
-      if (_isRecording) {
-        final videoFile = await _cameraController!.stopVideoRecording();
-        setState(() {
-          _isRecording = false;
-          _recordingCountdown = 0;
-        });
-
-        final segmentEnd = DateTime.now();
-        final start = _segmentStartTime ?? segmentEnd;
-        final durationSeconds = segmentEnd.difference(start).inSeconds;
-        _segmentCount += 1;
-        final segment = StudySegment(
-          id: 'seg_${_segmentCount}',
-          number: _segmentCount,
-          file: videoFile,
-          startTime: start,
-          endTime: segmentEnd,
-          durationSeconds: durationSeconds,
-        );
-
-        setState(() {
-          _segments.add(segment);
-        });
-
-        await _uploadSegment(segment);
+      if (_isCapturing) {
+        _stopCapture();
       } else {
-        await _cameraController!.startVideoRecording();
-        setState(() {
-          _isRecording = true;
-          _segmentStartTime = DateTime.now();
-          _recordingCountdown = 0;
-        });
+        _startCapture();
       }
     } catch (e) {
-      print('Lỗi quay video: $e');
+      print('Lỗi chụp ảnh: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi quay video: $e')));
+      ).showSnackBar(SnackBar(content: Text('Lỗi chụp ảnh: $e')));
     }
   }
 
-  Future<void> _uploadSegment(StudySegment segment) async {
-    setState(() => _isAnalyzing = true);
-    try {
-      final fileBytes = await segment.file.readAsBytes();
-      final formData = FormData.fromMap({
-        'user_id': 2,
-        'segment_number': segment.number,
-        'start_time': segment.startTime.toIso8601String(),
-        'end_time': segment.endTime.toIso8601String(),
-        'status': 'recorded',
-        if (_videoSessionId != null) 'video_id': _videoSessionId,
-        'file': MultipartFile.fromBytes(
-          fileBytes,
-          filename: path.basename(segment.filePath),
-        ),
-      });
+  void _startCapture() {
+    setState(() {
+      _isCapturing = true;
+      _isAnalyzing = false;
+      _captureCount = 0;
+      _analysisResult = null;
+      _captures.clear();
+    });
 
-      final response = await _dio.post(
-        '$_backendUrl/upload_segment',
-        data: formData,
-        options: Options(
-          contentType: 'multipart/form-data',
-          receiveTimeout: const Duration(seconds: 120),
-          sendTimeout: const Duration(seconds: 120),
-        ),
+    _captureFrame();
+    _captureTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _captureFrame();
+    });
+  }
+
+  void _stopCapture() {
+    _captureTimer?.cancel();
+    _captureTimer = null;
+    setState(() {
+      _isCapturing = false;
+    });
+  }
+
+  Future<void> _captureFrame() async {
+    if (!_cameraController!.value.isInitialized) return;
+    setState(() => _isAnalyzing = true);
+
+    try {
+      final XFile imageFile = await _cameraController!.takePicture();
+      final timestamp = DateTime.now().toIso8601String();
+      final response = await ApiService.analyzeFrame(
+        imageFile,
+        userId: 2,
+        timestamp: timestamp,
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data;
-        if (data['video_id'] != null) {
-          _videoSessionId =
-              int.tryParse(data['video_id'].toString()) ?? _videoSessionId;
-        }
+      final label = response['emotion']?.toString() ?? 'neutral';
+      final focusLevel = (response['confidence'] as num?)?.toDouble() ?? 0.5;
+      final confidence = (response['confidence'] as num?)?.toDouble() ?? 0.0;
+      final saved = response['saved_image'] == true;
+        final message = data['message']?.toString();
+        final backendPath = data['file_path']?.toString();
 
-        if (data['analysis'] != null) {
-          final analysis = data['analysis'];
-          _analysisResult = {
-            'concentrationScore': analysis['concentration_score'] ?? 0.0,
-            'focusStatus': analysis['focus_status'] ?? 'Unknown',
-            'focusEmoji': analysis['focus_emoji'] ?? '❓',
-            'dominantEmotion': analysis['dominant_emotion'] ?? 'neutral',
-            'emotionBreakdown': analysis['emotion_breakdown'] ?? {},
-            'frameCount': analysis['frame_count'] ?? 0,
-            'videoPath': segment.filePath,
-          };
-
-          _showResultDialog();
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Upload segment thành công')),
+        _captureCount += 1;
+        final capture = StudyCapture(
+          id: 'cap_${_captureCount}',
+          number: _captureCount,
+          file: imageFile,
+          timestamp: DateTime.parse(timestamp),
+          label: label,
+          focusLevel: focusLevel,
+          confidence: confidence,
+          saved: saved,
+          backendPath: backendPath,
+          message: message,
         );
+
+        setState(() {
+          _captures.insert(0, capture);
+          _analysisResult = {
+            'focusLevel': focusLevel,
+            'label': label,
+            'confidence': confidence,
+            'saved': saved,
+            'message': message,
+            'backendPath': backendPath,
+            'timestamp': timestamp,
+          };
+        });
+
+        if (saved) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Ảnh ${_captureCount} đã lưu: $label')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Bỏ qua ảnh trùng trạng thái: $label')),
+          );
+        }
       } else {
-        throw Exception('Upload segment thất bại: ${response.statusCode}');
+        throw Exception('Upload frame thất bại: ${response.statusCode}');
       }
     } catch (e) {
-      print('Lỗi upload segment: $e');
+      print('Lỗi upload frame: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi upload segment: $e')));
+      ).showSnackBar(SnackBar(content: Text('Lỗi upload frame: $e')));
     } finally {
-      setState(() => _isAnalyzing = false);
+      if (mounted) {
+        setState(() => _isAnalyzing = false);
+      }
     }
   }
 
@@ -379,27 +383,15 @@ class _StudyPageState extends State<StudyPage> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: _isRecording
-                    ? SizedBox(
-                        height: 300,
-                        child: CameraPreview(_cameraController!),
-                      )
-                    : Container(
-                        height: 300,
-                        color: Colors.grey[300],
-                        child: Center(
-                          child: Icon(
-                            Icons.videocam,
-                            size: 80,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ),
+                child: SizedBox(
+                  height: 300,
+                  child: CameraPreview(_cameraController!),
+                ),
               ),
             ),
 
             // Recording state
-            if (_isRecording)
+            if (_isCapturing)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Column(
@@ -411,7 +403,7 @@ class _StudyPageState extends State<StudyPage> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Đang ghi đoạn video...',
+                      'Đang chụp ảnh tự động...',
                       style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   ],
@@ -461,7 +453,7 @@ class _StudyPageState extends State<StudyPage> {
                         Column(
                           children: [
                             Text(
-                              '${((_analysisResult!['concentrationScore'] as num) * 100).toStringAsFixed(0)}%',
+                              '${((_analysisResult!['focusLevel'] as num) * 100).toStringAsFixed(0)}%',
                               style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
@@ -474,7 +466,8 @@ class _StudyPageState extends State<StudyPage> {
                         Column(
                           children: [
                             Text(
-                              _analysisResult!['focusStatus'],
+                              _analysisResult!['label']?.toString() ??
+                                  'neutral',
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
@@ -482,17 +475,32 @@ class _StudyPageState extends State<StudyPage> {
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 4),
-                            const Text('Trạng thái'),
+                            const Text('Biểu cảm'),
                           ],
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Độ tin cậy: ${(((_analysisResult!['confidence'] as num?)?.toDouble() ?? 0.0) * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    if (_analysisResult!['message'] != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _analysisResult!['message'].toString(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
             ],
 
-            if (_segments.isNotEmpty) ...[
+            if (_captures.isNotEmpty) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -502,25 +510,25 @@ class _StudyPageState extends State<StudyPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Danh sách đoạn đã ghi',
+                      'Danh sách ảnh đã gửi',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    ..._segments.map(
-                      (segment) => Card(
+                    ..._captures.map(
+                      (capture) => Card(
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
                           leading: CircleAvatar(
-                            child: Text(segment.number.toString()),
+                            child: Text(capture.number.toString()),
                           ),
                           title: Text(
-                            'Đoạn ${segment.number} • ${segment.durationSeconds}s',
+                            'Ảnh ${capture.number} • ${capture.label}',
                           ),
                           subtitle: Text(
-                            '${segment.startTime.hour.toString().padLeft(2, '0')}:${segment.startTime.minute.toString().padLeft(2, '0')} - ${segment.endTime.hour.toString().padLeft(2, '0')}:${segment.endTime.minute.toString().padLeft(2, '0')}',
+                            '${capture.timestamp.hour.toString().padLeft(2, '0')}:${capture.timestamp.minute.toString().padLeft(2, '0')}:${capture.timestamp.second.toString().padLeft(2, '0')} • ${capture.saved ? 'Đã lưu' : 'Bỏ qua'}',
                           ),
                         ),
                       ),
@@ -539,7 +547,7 @@ class _StudyPageState extends State<StudyPage> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _isAnalyzing ? null : _toggleRecording,
+                  onPressed: _isAnalyzing ? null : _toggleCapture,
                   style: ElevatedButton.styleFrom(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -548,7 +556,7 @@ class _StudyPageState extends State<StudyPage> {
                     disabledBackgroundColor: Colors.grey,
                   ),
                   child: Text(
-                    _isRecording ? 'Dừng ghi đoạn' : 'Bắt đầu ghi đoạn',
+                    _isCapturing ? 'Dừng chụp ảnh' : 'Bắt đầu chụp ảnh',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -562,12 +570,5 @@ class _StudyPageState extends State<StudyPage> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _countdownTimer?.cancel();
-    _cameraController?.dispose();
-    super.dispose();
   }
 }
