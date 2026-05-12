@@ -2,24 +2,25 @@ import 'package:flutter/material.dart';
 import '../../constants/app_state.dart';
 import '../../data/remote/api_service.dart';
 
-class HistoryPage extends StatefulWidget {
-  const HistoryPage({super.key});
+class UserEmotionTimelinePage extends StatefulWidget {
+  const UserEmotionTimelinePage({super.key});
 
   @override
-  State<HistoryPage> createState() => _HistoryPageState();
+  State<UserEmotionTimelinePage> createState() =>
+      _UserEmotionTimelinePageState();
 }
 
-class _HistoryPageState extends State<HistoryPage> {
+class _UserEmotionTimelinePageState extends State<UserEmotionTimelinePage> {
   late Future<List<Map<String, dynamic>>> _timelineFuture;
   DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
-    _refreshHistory();
+    _refreshTimeline();
   }
 
-  void _refreshHistory() {
+  void _refreshTimeline() {
     final userId = currentUserNotifier.value.id > 0
         ? currentUserNotifier.value.id
         : 1;
@@ -80,16 +81,13 @@ class _HistoryPageState extends State<HistoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Lịch sử nhận diện",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Timeline Cảm Xúc của bạn'),
         backgroundColor: Colors.lightBlue,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
+            onPressed: _refreshTimeline,
             icon: const Icon(Icons.refresh),
-            onPressed: _refreshHistory,
           ),
           IconButton(
             icon: const Icon(Icons.calendar_today),
@@ -104,7 +102,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 setState(() {
                   _selectedDate = picked;
                 });
-                _refreshHistory();
+                _refreshTimeline();
               }
             },
           ),
@@ -116,7 +114,6 @@ class _HistoryPageState extends State<HistoryPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-
           if (snapshot.hasError) {
             return Center(
               child: Column(
@@ -124,10 +121,10 @@ class _HistoryPageState extends State<HistoryPage> {
                 children: [
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
-                  const Text("Lỗi tải dữ liệu. Vui lòng kiểm tra server."),
+                  const Text('Lỗi tải dữ liệu. Vui lòng kiểm tra server.'),
                   TextButton(
-                    onPressed: _refreshHistory,
-                    child: const Text("Thử lại"),
+                    onPressed: _refreshTimeline,
+                    child: const Text('Thử lại'),
                   ),
                 ],
               ),
@@ -142,19 +139,15 @@ class _HistoryPageState extends State<HistoryPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.history_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
+                  Icon(Icons.timeline, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   const Text(
-                    "Chưa có dữ liệu nhận diện cho ngày này",
+                    'Chưa có dữ liệu timeline cho ngày này',
                     style: TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    "Hãy bật camera và học để thu thập dữ liệu.",
+                    'Hãy bật camera và học để thu thập dữ liệu.',
                     style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
@@ -348,17 +341,17 @@ class _HistoryPageState extends State<HistoryPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Snapshot - ${snapshot['emotion']}"),
+        title: Text('Snapshot - ${snapshot['emotion']}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text("Thời gian: ${DateTime.parse(snapshot['timestamp'])}"),
+            Text('Thời gian: ${DateTime.parse(snapshot['timestamp'])}'),
             Text(
-              "Confidence: ${(snapshot['confidence'] * 100).toStringAsFixed(1)}%",
+              'Confidence: ${(snapshot['confidence'] * 100).toStringAsFixed(1)}%',
             ),
             if (snapshot['previous_emotion'] != null)
-              Text("Trước đó: ${snapshot['previous_emotion']}"),
-            Text("State Change: ${snapshot['state_change'] ? 'Có' : 'Không'}"),
+              Text('Trước đó: ${snapshot['previous_emotion']}'),
+            Text('State Change: ${snapshot['state_change'] ? 'Có' : 'Không'}'),
           ],
         ),
         actions: [

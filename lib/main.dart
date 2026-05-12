@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'features/home/auth_screen.dart';
 import 'features/home/monitor_page.dart';
-import 'features/home/history_page.dart';
+import 'features/home/user_emotion_timeline_page.dart';
 import 'features/home/notification_page.dart';
 import 'features/profile/profile_page.dart';
 import 'features/home/value_listenable_builder_2.dart';
@@ -125,7 +125,7 @@ class _HomePageState extends State<HomePage> {
         controller: _controller,
         onToggle: _toggleMonitoring,
       ),
-      const HistoryPage(),
+      const UserEmotionTimelinePage(),
       const NotificationPage(),
       const ProfilePage(),
     ];

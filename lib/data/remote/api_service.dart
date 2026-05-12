@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:cross_file/cross_file.dart';
@@ -91,13 +92,124 @@ class ApiService {
     }
   }
 
+  static String _makeAbsoluteUrl(String value) {
+    if (value.startsWith('/')) {
+      return '$baseUrl$value';
+    }
+    return value;
+  }
+
   static Future<List<Map<String, dynamic>>> getAdminUsers() async {
     final response = await http.get(Uri.parse('$baseUrl/admin/users'));
     if (response.statusCode == 200) {
       final List<dynamic> body = jsonDecode(response.body);
-      return body.map((item) => item as Map<String, dynamic>).toList();
+      return body.map((item) {
+        final user = item as Map<String, dynamic>;
+        if (user['avatar_url'] is String) {
+          user['avatar_url'] = _makeAbsoluteUrl(user['avatar_url'] as String);
+        }
+        return user;
+      }).toList();
     }
     throw Exception('Failed to load admin users');
+  }
+
+  static Future<Map<String, dynamic>> createAdminUser({
+    required String name,
+    required String email,
+    required String password,
+    String role = 'student',
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/admin/users'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'name': name,
+        'email': email,
+        'password': password,
+        'role': role,
+      }),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final user = jsonDecode(response.body) as Map<String, dynamic>;
+      if (user['avatar_url'] is String) {
+        user['avatar_url'] = _makeAbsoluteUrl(user['avatar_url'] as String);
+      }
+      return user;
+    }
+    throw Exception('Failed to create admin user: ${response.body}');
+  }
+
+  static Future<Map<String, dynamic>> updateAdminUser({
+    required int userId,
+    String? name,
+    String? email,
+    String? password,
+    String? role,
+  }) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/admin/users/$userId'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        if (name != null) 'name': name,
+        if (email != null) 'email': email,
+        if (password != null) 'password': password,
+        if (role != null) 'role': role,
+      }),
+    );
+    if (response.statusCode == 200) {
+      final user = jsonDecode(response.body) as Map<String, dynamic>;
+      if (user['avatar_url'] is String) {
+        user['avatar_url'] = _makeAbsoluteUrl(user['avatar_url'] as String);
+      }
+      return user;
+    }
+    throw Exception('Failed to update admin user: ${response.body}');
+  }
+
+  static Future<bool> deleteAdminUser(int userId) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/admin/users/$userId'),
+    );
+    return response.statusCode == 200;
+  }
+
+  static Future<bool> uploadAdminUserAvatar({
+    required int userId,
+    Uint8List? bytes,
+    String? filename,
+    String? path,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/admin/users/$userId/avatar'),
+    );
+    if (bytes != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'avatar',
+          bytes,
+          filename: filename ?? 'avatar.jpg',
+        ),
+      );
+    } else if (path != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'avatar',
+          path,
+          filename: filename ?? path.split('/').last,
+        ),
+      );
+    } else {
+      throw Exception('No avatar file provided');
+    }
+
+    final response = await request.send();
+    if (response.statusCode == 200) {
+      return true;
+    }
+    final responseData = await response.stream.bytesToString();
+    throw Exception('Failed to upload avatar: $responseData');
   }
 
   static Future<List<Map<String, dynamic>>> getAdminUserDailyStats({
@@ -144,9 +256,19 @@ class ApiService {
     final response = await http.get(uri);
     if (response.statusCode == 200) {
       final List<dynamic> body = jsonDecode(response.body);
-      return body.map((item) => item as Map<String, dynamic>).toList();
+      return body.map((item) {
+        final frame = item as Map<String, dynamic>;
+        if (frame['image_url'] is String) {
+          frame['image_url'] = _makeAbsoluteUrl(frame['image_url'] as String);
+        }
+        return frame;
+      }).toList();
     }
     throw Exception('Failed to load emotion timeline');
+  }
+
+  static String getFrameImageUrl(int frameId) {
+    return _makeAbsoluteUrl('/frame-emotion/$frameId/image');
   }
 
   /// Lấy lịch sử học tập từ backend

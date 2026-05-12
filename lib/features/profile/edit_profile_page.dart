@@ -35,10 +35,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   void _updateProfile() {
     if (_formKey.currentState!.validate()) {
+      final currentUser = currentUserNotifier.value;
       currentUserNotifier.value = User(
+        id: currentUser.id,
         name: nameController.text,
         email: emailController.text,
         avatar: avatarController.text,
+        role: currentUser.role,
       );
 
       Navigator.pop(context);

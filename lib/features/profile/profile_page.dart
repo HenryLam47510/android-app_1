@@ -31,8 +31,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return ValueListenableBuilder<User>(
       valueListenable: currentUserNotifier,
       builder: (context, user, _) {
-        // Giả sử admin@gmail.com là tài khoản Admin
-        bool isAdmin = user.email == "admin@gmail.com";
+        final bool isAdmin = user.role == 'admin';
 
         return Scaffold(
           appBar: AppBar(

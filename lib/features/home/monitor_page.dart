@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import '../../constants/app_state.dart';
 import '../../data/remote/api_service.dart';
 
 class MonitorPage extends StatefulWidget {
@@ -24,7 +25,6 @@ class _MonitorPageState extends State<MonitorPage> {
   String _focusLabel = 'neutral';
   double _confidence = 0.0;
   Timer? _timer;
-  final int _userId = 1;
 
   @override
   void didUpdateWidget(MonitorPage oldWidget) {
@@ -65,9 +65,12 @@ class _MonitorPageState extends State<MonitorPage> {
     try {
       final XFile image = await widget.controller!.takePicture();
       final String timestamp = DateTime.now().toIso8601String();
+      final userId = currentUserNotifier.value.id > 0
+          ? currentUserNotifier.value.id
+          : 1;
       final Map<String, dynamic> response = await ApiService.analyzeFrame(
         image,
-        userId: _userId,
+        userId: userId,
         timestamp: timestamp,
       );
 

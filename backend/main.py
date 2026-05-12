@@ -1129,6 +1129,8 @@ def get_emotion_timeline(user_id: int, date: str = None):
             timestamp_val = frame.get('timestamp')
             if timestamp_val is not None and not isinstance(timestamp_val, str):
                 frame['timestamp'] = timestamp_val.isoformat()
+            frame['state_change'] = bool(frame['state_change'])
+            frame['confidence'] = float(frame['confidence'])
         return frames
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))

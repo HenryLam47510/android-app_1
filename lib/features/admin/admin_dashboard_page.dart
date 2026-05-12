@@ -3,6 +3,7 @@ import '../../data/remote/api_service.dart';
 import '../../constants/app_state.dart';
 import '../home/auth_screen.dart'; // Import để chuyển hướng khi đăng xuất
 import 'admin_emotion_timeline_page.dart';
+import 'admin_student_accounts_page.dart';
 import 'admin_user_daily_stats_page.dart';
 import 'student_management_page.dart';
 import 'class_management_page.dart';
@@ -54,17 +55,17 @@ class AdminDashboardPage extends StatelessWidget {
                   children: [
                     _buildStatCard(
                       context,
-                      "Tổng Sinh viên",
+                      "Quản lý Học sinh",
                       stats['totalStudents']?.toString() ?? "0",
                       Icons.school,
                       Colors.teal,
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const StudentManagementPage(),
+                          builder: (_) => const AdminStudentAccountsPage(),
                         ),
                       ),
-                      helper: 'Quản lý hồ sơ sinh viên, QR code, Import Excel',
+                      helper: 'Xem danh sách tài khoản học sinh hiện tại từ DB',
                     ),
                     _buildStatCard(
                       context,

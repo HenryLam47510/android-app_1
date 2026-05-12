@@ -151,7 +151,7 @@ INSERT INTO `videos` (`id`, `user_id`, `file_path`, `duration`, `status`, `creat
 --
 
 CREATE TABLE `frame_emotions` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `emotion` varchar(50) NOT NULL,
   `confidence` float NOT NULL,
@@ -159,7 +159,8 @@ CREATE TABLE `frame_emotions` (
   `image_path` varchar(255) DEFAULT NULL,
   `state_change` tinyint(1) DEFAULT 0,
   `previous_emotion` varchar(50) DEFAULT NULL,
-  `created_at` datetime DEFAULT current_timestamp()
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------

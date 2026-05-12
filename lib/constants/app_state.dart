@@ -10,8 +10,10 @@ final ValueNotifier<bool> isLoggedInNotifier = ValueNotifier(false);
 // Quản lý thông tin người dùng hiện tại
 final ValueNotifier<User> currentUserNotifier = ValueNotifier(
   User(
+    id: 0,
     name: "Nguyễn Văn A",
     email: "admin@gmail.com",
     avatar: "https://ui-avatars.com/api/?name=Nguyen+Van+A",
+    role: 'student',
   ),
 );

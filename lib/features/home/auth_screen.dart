@@ -24,12 +24,19 @@ class _AuthScreenState extends State<AuthScreen> {
     if (_isLogin) {
       try {
         final user = await ApiService.login(email, password);
+        final avatarUrl =
+            user['avatar_url'] is String &&
+                (user['avatar_url'] as String).isNotEmpty
+            ? user['avatar_url'] as String
+            : (user['role'] == 'admin'
+                  ? 'https://ui-avatars.com/api/?name=Teacher&background=3F51B5&color=fff'
+                  : 'https://ui-avatars.com/api/?name=Student&background=03A9F4&color=fff');
         currentUserNotifier.value = User(
+          id: user['id'] is int ? user['id'] as int : 0,
           name: user['name'] ?? 'Người dùng',
           email: user['email'] ?? email,
-          avatar: user['role'] == 'admin'
-              ? 'https://ui-avatars.com/api/?name=Teacher&background=3F51B5&color=fff'
-              : 'https://ui-avatars.com/api/?name=Student&background=03A9F4&color=fff',
+          avatar: avatarUrl,
+          role: user['role'] ?? 'student',
         );
         isLoggedInNotifier.value = true;
 

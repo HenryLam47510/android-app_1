@@ -20,6 +20,7 @@ class _AdminEmotionTimelinePageState extends State<AdminEmotionTimelinePage> {
   @override
   void initState() {
     super.initState();
+    _timelineFuture = Future.value([]);
     _usersFuture = ApiService.getAdminUsers();
     _loadUsers();
   }
@@ -62,39 +63,49 @@ class _AdminEmotionTimelinePageState extends State<AdminEmotionTimelinePage> {
     super.dispose();
   }
 
-  List<Map<String, dynamic>> _groupByHour(List<Map<String, dynamic>> frames) {
+  List<Map<String, dynamic>> _groupByTimeBucket(
+    List<Map<String, dynamic>> frames,
+  ) {
     final grouped = <String, Map<String, dynamic>>{};
 
     for (final frame in frames) {
       final timestamp = DateTime.parse(frame['timestamp']);
-      final hourKey = '${timestamp.hour.toString().padLeft(2, '0')}:00';
+      final bucketStart = DateTime(
+        timestamp.year,
+        timestamp.month,
+        timestamp.day,
+        timestamp.hour,
+        (timestamp.minute ~/ 10) * 10,
+      );
+      final bucketKey =
+          '${bucketStart.hour.toString().padLeft(2, '0')}:${bucketStart.minute.toString().padLeft(2, '0')}';
       final emotion = frame['emotion'] as String;
 
-      if (!grouped.containsKey(hourKey)) {
-        grouped[hourKey] = {
-          'hour': hourKey,
+      if (!grouped.containsKey(bucketKey)) {
+        grouped[bucketKey] = {
+          'bucket': bucketKey,
           'emotions': <String, Map<String, dynamic>>{},
           'snapshots': <Map<String, dynamic>>[],
         };
       }
 
-      if (!grouped[hourKey]!['emotions'].containsKey(emotion)) {
-        grouped[hourKey]!['emotions'][emotion] = {
+      if (!grouped[bucketKey]!['emotions'].containsKey(emotion)) {
+        grouped[bucketKey]!['emotions'][emotion] = {
           'count': 0,
           'frames': <Map<String, dynamic>>[],
         };
       }
 
-      grouped[hourKey]!['emotions'][emotion]['count'] += 1;
-      grouped[hourKey]!['emotions'][emotion]['frames'].add(frame);
+      grouped[bucketKey]!['emotions'][emotion]['count'] += 1;
+      grouped[bucketKey]!['emotions'][emotion]['frames'].add(frame);
 
-      if (frame['image_path'] != null) {
-        grouped[hourKey]!['snapshots'].add(frame);
+      if (frame['image_url'] != null) {
+        grouped[bucketKey]!['snapshots'].add(frame);
       }
     }
 
     return grouped.values.toList()
-      ..sort((a, b) => b['hour'].compareTo(a['hour']));
+      ..sort((a, b) => b['bucket'].compareTo(a['bucket']));
   }
 
   @override
@@ -176,7 +187,7 @@ class _AdminEmotionTimelinePageState extends State<AdminEmotionTimelinePage> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final frames = snapshot.data ?? [];
-                final groupedData = _groupByHour(frames);
+                final groupedData = _groupByTimeBucket(frames);
 
                 if (groupedData.isEmpty) {
                   return const Center(
@@ -215,7 +226,7 @@ class _AdminEmotionTimelinePageState extends State<AdminEmotionTimelinePage> {
                             ),
                             child: ExpansionTile(
                               title: Text(
-                                hourData['hour'],
+                                hourData['bucket'] as String? ?? 'Không rõ',
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -256,7 +267,7 @@ class _AdminEmotionTimelinePageState extends State<AdminEmotionTimelinePage> {
                                             snapshot,
                                           ),
                                           child: Container(
-                                            width: 80,
+                                            width: 100,
                                             margin: const EdgeInsets.symmetric(
                                               horizontal: 4,
                                             ),
@@ -268,37 +279,96 @@ class _AdminEmotionTimelinePageState extends State<AdminEmotionTimelinePage> {
                                                   BorderRadius.circular(8),
                                             ),
                                             child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.stretch,
                                               children: [
                                                 Expanded(
                                                   child: Container(
+                                                    clipBehavior:
+                                                        Clip.antiAlias,
                                                     decoration: BoxDecoration(
-                                                      color: Colors.grey[200],
                                                       borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
+                                                          const BorderRadius.only(
+                                                            topLeft:
+                                                                Radius.circular(
+                                                                  8,
+                                                                ),
+                                                            topRight:
+                                                                Radius.circular(
+                                                                  8,
+                                                                ),
                                                           ),
+                                                      color: Colors.grey[200],
                                                     ),
-                                                    child: const Icon(
-                                                      Icons.image,
-                                                      size: 32,
-                                                    ),
+                                                    child:
+                                                        snapshot['image_url'] !=
+                                                            null
+                                                        ? Image.network(
+                                                            snapshot['image_url']
+                                                                as String,
+                                                            fit: BoxFit.cover,
+                                                            errorBuilder:
+                                                                (
+                                                                  context,
+                                                                  error,
+                                                                  stackTrace,
+                                                                ) {
+                                                                  return const Center(
+                                                                    child: Icon(
+                                                                      Icons
+                                                                          .broken_image,
+                                                                      size: 28,
+                                                                      color: Colors
+                                                                          .grey,
+                                                                    ),
+                                                                  );
+                                                                },
+                                                          )
+                                                        : const Center(
+                                                            child: Icon(
+                                                              Icons.image,
+                                                              size: 32,
+                                                              color:
+                                                                  Colors.grey,
+                                                            ),
+                                                          ),
                                                   ),
                                                 ),
-                                                Text(
-                                                  snapshot['emotion'],
-                                                  style: const TextStyle(
-                                                    fontSize: 10,
+                                                Padding(
+                                                  padding: const EdgeInsets.all(
+                                                    6.0,
                                                   ),
-                                                ),
-                                                Text(
-                                                  DateTime.parse(
-                                                        snapshot['timestamp'],
-                                                      )
-                                                      .toString()
-                                                      .split(' ')[1]
-                                                      .substring(0, 5),
-                                                  style: const TextStyle(
-                                                    fontSize: 10,
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        snapshot['emotion']
+                                                                ?.toString() ??
+                                                            'Không rõ',
+                                                        style: const TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                      const SizedBox(height: 2),
+                                                      Text(
+                                                        DateTime.parse(
+                                                              snapshot['timestamp'],
+                                                            )
+                                                            .toString()
+                                                            .split(' ')[1]
+                                                            .substring(0, 5),
+                                                        style: const TextStyle(
+                                                          fontSize: 10,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
                                               ],
@@ -343,7 +413,9 @@ class _AdminEmotionTimelinePageState extends State<AdminEmotionTimelinePage> {
             ),
             if (snapshot['previous_emotion'] != null)
               Text("Trước đó: ${snapshot['previous_emotion']}"),
-            Text("State Change: ${snapshot['state_change'] ? 'Có' : 'Không'}"),
+            Text(
+              "State Change: ${snapshot['state_change'] == true ? 'Có' : 'Không'}",
+            ),
           ],
         ),
         actions: [
