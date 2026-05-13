@@ -86,6 +86,7 @@ class ApiService {
         "totalSessions": 0,
         "todayFrames": 0,
         "totalAiAnalyses": 0,
+        "totalAwayReports": 0,
         "attendanceToday": 0,
         "recentActivities": [],
       };
@@ -265,6 +266,95 @@ class ApiService {
       }).toList();
     }
     throw Exception('Failed to load emotion timeline');
+  }
+
+  static Future<List<Map<String, dynamic>>> getAdminLatestAiAnalyses({
+    int? userId,
+    DateTime? date,
+    int limit = 50,
+  }) async {
+    final queryParameters = <String, String>{
+      'limit': limit.toString(),
+      if (userId != null) 'user_id': userId.toString(),
+      if (date != null) 'date': date.toIso8601String().split('T')[0],
+    };
+    final uri = Uri.parse('$baseUrl/admin/latest-ai-analyses').replace(
+      queryParameters: queryParameters.isNotEmpty ? queryParameters : null,
+    );
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final List<dynamic> body = jsonDecode(response.body);
+      return body.map((item) {
+        final analysis = item as Map<String, dynamic>;
+        if (analysis['image_url'] is String) {
+          analysis['image_url'] = _makeAbsoluteUrl(
+            analysis['image_url'] as String,
+          );
+        }
+        return analysis;
+      }).toList();
+    }
+    throw Exception('Failed to load latest AI analyses');
+  }
+
+  static Future<bool> sendMonitorAwayReport({
+    required int userId,
+    required int awaySeconds,
+    required String source,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin/monitor-away-report'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': userId,
+          'away_seconds': awaySeconds,
+          'source': source,
+        }),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      print('Monitor away report error: $e');
+      return false;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getMonitorAwayReports({
+    int? userId,
+    String? source,
+    DateTime? date,
+  }) async {
+    final queryParameters = <String, String>{
+      if (userId != null) 'user_id': userId.toString(),
+      if (source != null && source.isNotEmpty) 'source': source,
+      if (date != null) 'date': date.toIso8601String().split('T')[0],
+    };
+    final uri = Uri.parse('$baseUrl/admin/monitor-away-reports').replace(
+      queryParameters: queryParameters.isNotEmpty ? queryParameters : null,
+    );
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final List<dynamic> body = jsonDecode(response.body);
+      return body.map((item) => item as Map<String, dynamic>).toList();
+    }
+    throw Exception('Failed to load monitor away reports');
+  }
+
+  static Future<bool> updateMonitorReportNote(
+    int reportIndex,
+    String note,
+  ) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/admin/monitor-away-reports/$reportIndex/note'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'note': note}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Update report note error: $e');
+      return false;
+    }
   }
 
   static String getFrameImageUrl(int frameId) {

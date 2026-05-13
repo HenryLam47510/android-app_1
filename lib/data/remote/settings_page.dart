@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/slide_page_route.dart';
 import '../../features/profile/change_password_page.dart';
 import '../../features/profile/help_center_page.dart';
 
@@ -72,7 +73,7 @@ class _SettingsPageState extends State<SettingsPage> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+              SlidePageRoute(page: const ChangePasswordPage()),
             ),
           ),
           SwitchListTile(
@@ -119,14 +120,14 @@ class _SettingsPageState extends State<SettingsPage> {
             title: const Text("Hướng dẫn sử dụng"),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const HelpCenterPage()),
+              SlidePageRoute(page: const HelpCenterPage()),
             ),
           ),
           ListTile(
             title: const Text("Câu hỏi thường gặp (FAQ)"),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const HelpCenterPage()),
+              SlidePageRoute(page: const HelpCenterPage()),
             ),
           ),
           ListTile(

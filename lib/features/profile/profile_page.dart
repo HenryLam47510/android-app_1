@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '/constants/app_state.dart';
 import '/features/profile/user.dart';
+import '/core/slide_page_route.dart';
 import 'edit_profile_page.dart';
 import 'change_password_page.dart';
 import 'help_center_page.dart';
@@ -99,9 +100,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => const EditProfilePage(),
-                            ),
+                            SlidePageRoute(page: const EditProfilePage()),
                           );
                         },
                         icon: const Icon(Icons.edit, size: 18),
@@ -159,9 +158,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (_) => const AdminDashboardPage(),
-                          ),
+                          SlidePageRoute(page: const AdminDashboardPage()),
                         );
                       },
                     ),
@@ -227,7 +224,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const SettingsPage()),
+                      SlidePageRoute(page: const SettingsPage()),
                     );
                   },
                 ),
@@ -237,9 +234,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => const ChangePasswordPage(),
-                      ),
+                      SlidePageRoute(page: const ChangePasswordPage()),
                     );
                   },
                 ),
@@ -249,7 +244,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const HelpCenterPage()),
+                      SlidePageRoute(page: const HelpCenterPage()),
                     );
                   },
                 ),

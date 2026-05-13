@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'data/remote/api_service.dart';
 import 'features/home/auth_screen.dart';
 import 'features/home/monitor_page.dart';
 import 'features/home/user_emotion_timeline_page.dart';
@@ -67,10 +68,56 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   int _selectedIndex = 0;
   bool _isMonitoring = false;
   CameraController? _controller;
+  DateTime? _monitorHiddenAt;
+  DateTime? _appPausedAt;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initializeCamera() async {
+    if (_cameras.isEmpty) {
+      try {
+        _cameras = await availableCameras();
+      } catch (_) {}
+      if (_cameras.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Không tìm thấy thiết bị camera")),
+        );
+        return;
+      }
+    }
+
+    _controller = CameraController(
+      _cameras.firstWhere(
+        (camera) => camera.lensDirection == CameraLensDirection.front,
+        orElse: () => _cameras.first,
+      ),
+      ResolutionPreset.medium,
+    );
+
+    try {
+      await _controller!.initialize();
+      setState(() {
+        _isMonitoring = true;
+      });
+    } catch (e) {
+      print("Camera error: $e");
+    }
+  }
 
   Future<void> _toggleMonitoring() async {
     if (_isMonitoring) {
@@ -78,43 +125,63 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _isMonitoring = false;
         _controller = null;
+        _monitorHiddenAt = null;
+        _appPausedAt = null;
       });
     } else {
-      if (_cameras.isEmpty) {
-        try {
-          _cameras = await availableCameras();
-        } catch (_) {}
-        if (_cameras.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Không tìm thấy thiết bị camera")),
-          );
-          return;
-        }
-      }
-
-      _controller = CameraController(
-        _cameras.firstWhere(
-          (camera) => camera.lensDirection == CameraLensDirection.front,
-          orElse: () => _cameras.first,
-        ),
-        ResolutionPreset.medium,
-      );
-
-      try {
-        await _controller!.initialize();
-        setState(() {
-          _isMonitoring = true;
-        });
-      } catch (e) {
-        print("Camera error: $e");
-      }
+      await _initializeCamera();
     }
   }
 
+  void _handleMonitorReturn(Duration duration, String source) {
+    if (duration.inSeconds < 1) return;
+    final message = source == 'tab'
+        ? 'Bạn đã rời màn hình camera trong ${duration.inSeconds} giây.'
+        : 'Bạn đã rời app trong ${duration.inSeconds} giây và quay lại camera.';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+    ApiService.sendMonitorAwayReport(
+      userId: currentUserNotifier.value.id,
+      awaySeconds: duration.inSeconds,
+      source: source,
+    );
+  }
+
   @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (!_isMonitoring) return;
+
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _appPausedAt ??= DateTime.now();
+      return;
+    }
+
+    if (state == AppLifecycleState.resumed) {
+      if (_appPausedAt != null) {
+        final awayDuration = DateTime.now().difference(_appPausedAt!);
+        _appPausedAt = null;
+        _handleMonitorReturn(awayDuration, 'background');
+      }
+      if (_controller != null) {
+        if (!_controller!.value.isInitialized) {
+          _controller!
+              .initialize()
+              .then((_) {
+                setState(() {});
+              })
+              .catchError((e) {
+                print('Failed to reinitialize camera: $e');
+              });
+        } else {
+          try {
+            _controller?.resumePreview();
+          } catch (_) {}
+        }
+      }
+    }
   }
 
   @override
@@ -131,7 +198,7 @@ class _HomePageState extends State<HomePage> {
     ];
 
     return Scaffold(
-      body: pages[_selectedIndex],
+      body: IndexedStack(index: _selectedIndex, children: pages),
       bottomNavigationBar: BottomAppBar(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -153,7 +220,20 @@ class _HomePageState extends State<HomePage> {
         isSelected ? activeIcon : inactiveIcon,
         color: isSelected ? Colors.blue : Colors.grey,
       ),
-      onPressed: () => setState(() => _selectedIndex = index),
+      onPressed: () {
+        if (_selectedIndex == 0 && index != 0 && _isMonitoring) {
+          _monitorHiddenAt ??= DateTime.now();
+        }
+        if (_selectedIndex != 0 &&
+            index == 0 &&
+            _isMonitoring &&
+            _monitorHiddenAt != null) {
+          final awayDuration = DateTime.now().difference(_monitorHiddenAt!);
+          _monitorHiddenAt = null;
+          _handleMonitorReturn(awayDuration, 'tab');
+        }
+        setState(() => _selectedIndex = index);
+      },
     );
   }
 }

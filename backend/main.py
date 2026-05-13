@@ -1,4 +1,5 @@
 import glob
+import json
 import os
 import io
 import hashlib
@@ -893,6 +894,7 @@ def admin_dashboard():
                     for row in recent
                 ]
 
+                monitor_reports = _load_monitor_reports()
                 return {
                     "totalStudents": students['total_students'] or 0,
                     "totalUsers": users['total_users'] or 0,
@@ -901,9 +903,174 @@ def admin_dashboard():
                     "totalSessions": sessions['total_sessions'] or 0,
                     "todayFrames": today_frames['today_frames'] or 0,
                     "totalAiAnalyses": frames['total_frames'] or 0,
+                    "totalAwayReports": len(monitor_reports),
                     "attendanceToday": today_frames['today_frames'] or 0,
                     "recentActivities": recent_activities,
                 }
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/admin/latest-ai-analyses")
+def admin_latest_ai_analyses(limit: int = 50, user_id: int = None, date: str = None):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                query = (
+                    "SELECT fe.id, fe.user_id, u.name, u.email, fe.emotion, fe.confidence, "
+                    "fe.timestamp, fe.image_path, fe.state_change, fe.previous_emotion "
+                    "FROM frame_emotions fe "
+                    "JOIN users u ON u.id = fe.user_id "
+                    "WHERE fe.image_path IS NOT NULL AND fe.image_path != '' "
+                )
+                params = []
+                if user_id is not None:
+                    query += "AND fe.user_id = %s "
+                    params.append(user_id)
+                if date is not None:
+                    query += "AND DATE(fe.timestamp) = %s "
+                    params.append(date)
+                query += "ORDER BY fe.timestamp DESC LIMIT %s"
+                params.append(limit)
+
+                cursor.execute(query, tuple(params))
+                analyses = cursor.fetchall()
+
+        for analysis in analyses:
+            if analysis.get('image_path'):
+                analysis['image_url'] = f"/frame-emotion/{analysis['id']}/image"
+            else:
+                analysis['image_url'] = None
+            timestamp_val = analysis.get('timestamp')
+            if timestamp_val is not None and not isinstance(timestamp_val, str):
+                analysis['timestamp'] = timestamp_val.isoformat()
+            analysis['state_change'] = bool(analysis['state_change'])
+            analysis['confidence'] = float(analysis['confidence'])
+        return analyses
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+MONITOR_REPORTS_FILE = os.path.join(BASE_DIR, 'monitor_reports.json')
+
+
+def _load_monitor_reports() -> list:
+    if not os.path.exists(MONITOR_REPORTS_FILE):
+        return []
+    try:
+        with open(MONITOR_REPORTS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def _save_monitor_report(report: dict) -> None:
+    reports = _load_monitor_reports()
+    reports.insert(0, report)
+    if len(reports) > 200:
+        reports = reports[:200]
+    with open(MONITOR_REPORTS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(reports, f, ensure_ascii=False, indent=2)
+
+
+class MonitorAwayReport(BaseModel):
+    user_id: int
+    away_seconds: int
+    source: str = Field(..., description="tab hoặc background")
+    note: Optional[str] = None
+
+
+@app.post("/admin/monitor-away-report")
+def monitor_away_report(report: MonitorAwayReport):
+    try:
+        report_data = {
+            'user_id': report.user_id,
+            'away_seconds': report.away_seconds,
+            'source': report.source,
+            'note': report.note,
+            'timestamp': datetime.utcnow().isoformat(),
+            'user_name': None,
+        }
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT name FROM users WHERE id = %s",
+                        (report.user_id,),
+                    )
+                    user = cursor.fetchone()
+                    if user and user.get('name'):
+                        report_data['user_name'] = user['name']
+        except Exception:
+            # Không ảnh hưởng nếu không lấy được tên từ DB
+            pass
+
+        _save_monitor_report(report_data)
+        return {"success": True, "detail": "Report received"}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/admin/monitor-away-reports")
+def get_monitor_away_reports(
+    user_id: Optional[int] = None,
+    source: Optional[str] = None,
+    date: Optional[str] = None,
+):
+    try:
+        reports = _load_monitor_reports()
+        if user_id is not None:
+            reports = [r for r in reports if r.get('user_id') == user_id]
+        if source is not None:
+            reports = [r for r in reports if r.get('source') == source]
+        if date is not None:
+            reports = [
+                r for r in reports
+                if r.get('timestamp', '').startswith(date)
+            ]
+
+        # Khi trả về, bổ sung user_name nếu chưa có và DB khả dụng.
+        enriched_reports = []
+        for report in reports:
+            if report.get('user_name'):
+                enriched_reports.append(report)
+                continue
+            try:
+                with get_db_connection() as conn:
+                    with conn.cursor() as cursor:
+                        cursor.execute(
+                            "SELECT name FROM users WHERE id = %s",
+                            (report.get('user_id'),),
+                        )
+                        user = cursor.fetchone()
+                        if user and user.get('name'):
+                            report['user_name'] = user['name']
+            except Exception:
+                pass
+            enriched_reports.append(report)
+
+        return enriched_reports
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+class MonitorReportNoteUpdate(BaseModel):
+    note: str = ""
+
+
+@app.put("/admin/monitor-away-reports/{report_index}/note")
+def update_monitor_report_note(
+    report_index: int,
+    payload: MonitorReportNoteUpdate,
+):
+    try:
+        reports = _load_monitor_reports()
+        if 0 <= report_index < len(reports):
+            reports[report_index]['note'] = payload.note
+            with open(MONITOR_REPORTS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(reports, f, ensure_ascii=False, indent=2)
+            return {"success": True, "detail": "Note updated"}
+        raise HTTPException(status_code=404, detail="Report not found")
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
@@ -1073,8 +1240,10 @@ def admin_user_daily_stats(user_id: int = None, date: str = None):
                 query = (
                     "SELECT u.id AS user_id, u.name, u.email, "
                     "DATE(fe.timestamp) AS record_date, "
-                    "COUNT(*) AS total_frames, "
-                    "SUM(fe.image_path IS NOT NULL AND fe.image_path != '') AS saved_images "
+                    "fe.emotion AS emotion, "
+                    "COUNT(*) AS emotion_count, "
+                    "SUM(fe.image_path IS NOT NULL AND fe.image_path != '') AS saved_images, "
+                    "COUNT(*) AS total_frames "
                     "FROM frame_emotions fe "
                     "JOIN users u ON u.id = fe.user_id "
                 )
@@ -1088,8 +1257,8 @@ def admin_user_daily_stats(user_id: int = None, date: str = None):
                 elif date:
                     query += "WHERE DATE(fe.timestamp) = %s "
                     params.append(date)
-                query += "GROUP BY u.id, record_date "
-                query += "ORDER BY u.name ASC, record_date DESC"
+                query += "GROUP BY u.id, record_date, fe.emotion "
+                query += "ORDER BY u.name ASC, record_date DESC, fe.emotion ASC"
 
                 cursor.execute(query, params)
                 stats = cursor.fetchall()

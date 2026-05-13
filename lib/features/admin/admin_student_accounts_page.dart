@@ -12,6 +12,7 @@ class AdminStudentAccountsPage extends StatefulWidget {
 
 class _AdminStudentAccountsPageState extends State<AdminStudentAccountsPage> {
   late Future<List<Map<String, dynamic>>> _usersFuture;
+  bool _hasChanges = false;
 
   @override
   void initState() {
@@ -206,6 +207,7 @@ class _AdminStudentAccountsPageState extends State<AdminStudentAccountsPage> {
         );
       }
 
+      _hasChanges = true;
       await _refreshUsers();
     } catch (e) {
       if (mounted) {
@@ -246,6 +248,7 @@ class _AdminStudentAccountsPageState extends State<AdminStudentAccountsPage> {
       if (!success) {
         throw Exception('Xóa tài khoản không thành công');
       }
+      _hasChanges = true;
       await _refreshUsers();
     } catch (e) {
       if (mounted) {
@@ -258,104 +261,117 @@ class _AdminStudentAccountsPageState extends State<AdminStudentAccountsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quản lý Học sinh'),
-        backgroundColor: Colors.indigo,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showUserFormDialog(),
-        backgroundColor: Colors.indigo,
-        child: const Icon(Icons.add),
-        tooltip: 'Thêm tài khoản',
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Danh sách tài khoản học sinh hiện tại trong DB',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.of(context).pop(_hasChanges);
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Quản lý Học sinh'),
+          backgroundColor: Colors.indigo,
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _showUserFormDialog(),
+          backgroundColor: Colors.indigo,
+          child: const Icon(Icons.add),
+          tooltip: 'Thêm tài khoản',
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Danh sách tài khoản học sinh hiện tại trong DB',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
-                IconButton(
-                  onPressed: _refreshUsers,
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'Tải lại',
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: _usersFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Text(
-                        'Không thể tải danh sách tài khoản: ${snapshot.error}',
-                      ),
-                    );
-                  }
-                  final users = snapshot.data ?? [];
-                  if (users.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'Không có tài khoản học sinh trong hệ thống.',
-                      ),
-                    );
-                  }
-                  return ListView.separated(
-                    itemCount: users.length,
-                    separatorBuilder: (context, index) => const Divider(),
-                    itemBuilder: (context, index) {
-                      final user = users[index];
-                      return ListTile(
-                        leading: _buildAvatar(user),
-                        title: Text(user['name']?.toString() ?? 'Không tên'),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Email: ${user['email'] ?? '-'}'),
-                            Text('Vai trò: ${user['role'] ?? '-'}'),
-                            Text('ID: ${user['id'] ?? '-'}'),
-                          ],
-                        ),
-                        isThreeLine: true,
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(
-                                Icons.edit,
-                                color: Colors.indigo,
-                              ),
-                              onPressed: () => _showUserFormDialog(user: user),
-                              tooltip: 'Sửa',
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _confirmDelete(user),
-                              tooltip: 'Xóa',
-                            ),
-                          ],
+                  IconButton(
+                    onPressed: _refreshUsers,
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Tải lại',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _usersFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Không thể tải danh sách tài khoản: ${snapshot.error}',
                         ),
                       );
-                    },
-                  );
-                },
+                    }
+                    final users = snapshot.data ?? [];
+                    if (users.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          'Không có tài khoản học sinh trong hệ thống.',
+                        ),
+                      );
+                    }
+                    return ListView.separated(
+                      itemCount: users.length,
+                      separatorBuilder: (context, index) => const Divider(),
+                      itemBuilder: (context, index) {
+                        final user = users[index];
+                        return ListTile(
+                          leading: _buildAvatar(user),
+                          title: Text(user['name']?.toString() ?? 'Không tên'),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Email: ${user['email'] ?? '-'}'),
+                              Text('Vai trò: ${user['role'] ?? '-'}'),
+                              Text('ID: ${user['id'] ?? '-'}'),
+                            ],
+                          ),
+                          isThreeLine: true,
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.indigo,
+                                ),
+                                onPressed: () =>
+                                    _showUserFormDialog(user: user),
+                                tooltip: 'Sửa',
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () => _confirmDelete(user),
+                                tooltip: 'Xóa',
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      ), // đóng Scaffold
+    ); // đóng WillPopScope
   }
 }

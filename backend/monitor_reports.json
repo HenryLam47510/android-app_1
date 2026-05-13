@@ -1,0 +1,50 @@
+[
+  {
+    "user_id": 2,
+    "away_seconds": 5,
+    "source": "tab",
+    "note": null,
+    "timestamp": "2026-05-12T15:26:44.404993",
+    "user_name": "HoangDung"
+  },
+  {
+    "user_id": 3,
+    "away_seconds": 12,
+    "source": "tab",
+    "note": null,
+    "timestamp": "2026-05-12T14:54:23.864613",
+    "user_name": "HoangLam"
+  },
+  {
+    "user_id": 3,
+    "away_seconds": 8,
+    "source": "tab",
+    "note": null,
+    "timestamp": "2026-05-12T14:53:33.878702",
+    "user_name": "HoangLam"
+  },
+  {
+    "user_id": 3,
+    "away_seconds": 3,
+    "source": "background",
+    "note": null,
+    "timestamp": "2026-05-12T14:53:17.034365",
+    "user_name": "HoangLam"
+  },
+  {
+    "user_id": 3,
+    "away_seconds": 2,
+    "source": "tab",
+    "note": null,
+    "timestamp": "2026-05-12T14:53:07.646214",
+    "user_name": "HoangLam"
+  },
+  {
+    "user_id": 3,
+    "away_seconds": 6,
+    "source": "tab",
+    "note": null,
+    "timestamp": "2026-05-12T14:52:59.998728",
+    "user_name": "HoangLam"
+  }
+]

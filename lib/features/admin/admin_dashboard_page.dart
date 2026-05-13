@@ -3,13 +3,33 @@ import '../../data/remote/api_service.dart';
 import '../../constants/app_state.dart';
 import '../home/auth_screen.dart'; // Import để chuyển hướng khi đăng xuất
 import 'admin_emotion_timeline_page.dart';
+import 'admin_latest_ai_analysis_page.dart';
+import 'admin_monitor_reports_page.dart';
 import 'admin_student_accounts_page.dart';
 import 'admin_user_daily_stats_page.dart';
-import 'student_management_page.dart';
-import 'class_management_page.dart';
 
-class AdminDashboardPage extends StatelessWidget {
+class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
+
+  @override
+  State<AdminDashboardPage> createState() => _AdminDashboardPageState();
+}
+
+class _AdminDashboardPageState extends State<AdminDashboardPage> {
+  late Future<Map<String, dynamic>> _statsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _statsFuture = ApiService.getAdminDashboardStats();
+  }
+
+  Future<void> _refreshStats() async {
+    setState(() {
+      _statsFuture = ApiService.getAdminDashboardStats();
+    });
+    await _statsFuture;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +40,11 @@ class AdminDashboardPage extends StatelessWidget {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: "Làm mới",
+            onPressed: _refreshStats,
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             tooltip: "Đăng xuất",
             onPressed: () => _showLogoutDialog(context),
@@ -27,7 +52,7 @@ class AdminDashboardPage extends StatelessWidget {
         ],
       ),
       body: FutureBuilder<Map<String, dynamic>>(
-        future: ApiService.getAdminDashboardStats(),
+        future: _statsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -55,46 +80,73 @@ class AdminDashboardPage extends StatelessWidget {
                   children: [
                     _buildStatCard(
                       context,
-                      "Quản lý Học sinh",
+                      "Số học sinh",
                       stats['totalStudents']?.toString() ?? "0",
                       Icons.school,
                       Colors.teal,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AdminStudentAccountsPage(),
-                        ),
-                      ),
-                      helper: 'Xem danh sách tài khoản học sinh hiện tại từ DB',
+                      onTap: () async {
+                        final changed = await Navigator.push<bool?>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminStudentAccountsPage(),
+                          ),
+                        );
+                        if (changed == true) {
+                          await _refreshStats();
+                        }
+                      },
+                      helper:
+                          'Mở danh sách học sinh để thêm, sửa, xóa và quản lý thông tin',
                     ),
                     _buildStatCard(
                       context,
-                      "Tổng Tài khoản",
+                      "Tổng tài khoản",
                       stats['totalUsers']?.toString() ?? "0",
                       Icons.account_box,
                       Colors.indigo,
-                      onTap: () {
-                        // Có thể mở trang quản lý tài khoản nếu có
+                      onTap: () async {
+                        final changed = await Navigator.push<bool?>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminStudentAccountsPage(),
+                          ),
+                        );
+                        if (changed == true) {
+                          await _refreshStats();
+                        }
                       },
-                      helper: 'Số tài khoản người dùng trong hệ thống',
+                      helper:
+                          'Hiển thị toàn bộ tài khoản người dùng trong hệ thống',
                     ),
                     _buildStatCard(
                       context,
-                      "Ảnh hôm nay",
+                      "Khung hình hôm nay",
                       stats['todayFrames']?.toString() ?? "0",
                       Icons.photo_camera,
                       Colors.green,
-                      onTap: () => _showAttendanceSummary(context),
-                      helper: 'Số ảnh đã phân tích AI trong ngày hôm nay',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminEmotionTimelinePage(),
+                        ),
+                      ),
+                      helper:
+                          'Xem toàn bộ khung hình đã phân tích trong ngày hôm nay',
                     ),
                     _buildStatCard(
                       context,
-                      "Ảnh đã lưu",
+                      "Snapshot đã lưu",
                       stats['totalImages']?.toString() ?? "0",
                       Icons.photo_library,
                       Colors.deepOrange,
-                      onTap: () => _showCameraStatus(context),
-                      helper: 'Số ảnh đã lưu vào hệ thống từ AI',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminEmotionTimelinePage(),
+                        ),
+                      ),
+                      helper:
+                          'Xem lại các snapshot ảnh đã lưu từ quá trình phân tích AI',
                     ),
                     _buildStatCard(
                       context,
@@ -108,16 +160,38 @@ class AdminDashboardPage extends StatelessWidget {
                           builder: (_) => const AdminEmotionTimelinePage(),
                         ),
                       ),
-                      helper: 'Xem timeline cảm xúc theo giờ với snapshots',
+                      helper:
+                          'Xem toàn bộ lịch sử cảm xúc và các snapshot đã thu thập',
                     ),
                     _buildStatCard(
                       context,
-                      "Phân tích AI",
+                      "Lượt AI phân tích",
                       stats['totalAiAnalyses']?.toString() ?? "0",
                       Icons.auto_awesome,
                       Colors.purple,
-                      onTap: () => _showAiDetail(context),
-                      helper: 'Số lần mô hình AI đã xử lý khung hình',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminLatestAiAnalysisPage(),
+                        ),
+                      ),
+                      helper:
+                          'Xem ảnh phóng to của học sinh và dữ liệu từng snapshot AI',
+                    ),
+                    _buildStatCard(
+                      context,
+                      "Báo cáo rời camera",
+                      stats['totalAwayReports']?.toString() ?? "0",
+                      Icons.report,
+                      Colors.redAccent,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminMonitorReportsPage(),
+                        ),
+                      ),
+                      helper:
+                          'Xem lịch sử rời màn hình camera và thời gian away',
                     ),
                   ],
                 ),
@@ -216,26 +290,13 @@ class AdminDashboardPage extends StatelessWidget {
 
                 _buildMenuTile(
                   context,
-                  "Quản lý Sinh viên",
-                  "Thêm, sửa, xóa sinh viên và tải lên ảnh chân dung",
-                  Icons.school,
+                  "Báo cáo rời camera",
+                  "Xem lịch sử rời màn hình camera và thời gian away",
+                  Icons.report,
                   () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const StudentManagementPage(),
-                    ),
-                  ),
-                ),
-
-                _buildMenuTile(
-                  context,
-                  "Quản lý Lớp học & Môn học",
-                  "Chia lớp, gán môn học và giảng viên",
-                  Icons.class_,
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ClassManagementPage(),
+                      builder: (_) => const AdminMonitorReportsPage(),
                     ),
                   ),
                 ),
@@ -304,15 +365,15 @@ class AdminDashboardPage extends StatelessWidget {
     );
   }
 
-  void _showAiDetail(BuildContext context) {
+  void _showAiDetail(BuildContext context, int totalAiAnalyses) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Phân tích AI'),
-        content: const Text('''Đã thực hiện 1240 lần phân tích.
-- Điểm trung bình mô hình: 87%
-- Các buổi phân tích gần đây: 8
-- Cấu hình ngưỡng nhận diện khuôn mặt: 75%'''),
+        content: Text('''Tổng lượt phân tích AI: $totalAiAnalyses lượt.
+- Hiệu suất mô hình: 75%-90%.
+- Dữ liệu này phản ánh số khung hình đã xử lý.
+- Chuyển sang Timeline để xem kết quả chi tiết.'''),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -323,15 +384,18 @@ class AdminDashboardPage extends StatelessWidget {
     );
   }
 
-  void _showAttendanceSummary(BuildContext context) {
+  void _showTodayFrameSummary(
+    BuildContext context,
+    int todayFrames,
+    int attendanceToday,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Điểm danh hôm nay'),
-        content: const Text('''324 sinh viên đã điểm danh hôm nay.
-- Tỉ lệ điểm danh trung bình: 82%.
-- Lớp có chuyên cần cao nhất: AI01.
-- Lớp cần chú ý: ML04.'''),
+        title: const Text('Khung hình hôm nay'),
+        content: Text('''Số khung hình đã phân tích hôm nay: $todayFrames.
+- Số tác vụ ghi nhận chuyên cần hôm nay: $attendanceToday.
+- Dữ liệu này phản ánh số lần chụp và phân tích cảm xúc trong ngày.'''),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -342,15 +406,18 @@ class AdminDashboardPage extends StatelessWidget {
     );
   }
 
-  void _showCameraStatus(BuildContext context) {
+  void _showSavedImageSummary(
+    BuildContext context,
+    int totalImages,
+    int totalFrames,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Camera online'),
-        content: const Text('''12 camera đang online.
-- Camera chính: online, 30 FPS.
-- Camera phụ C3: online, 24 FPS.
-- Camera ngoại tuyến: C7.'''),
+        title: const Text('Snapshot đã lưu'),
+        content: Text('''Số ảnh snapshot đã lưu: $totalImages.
+- Tổng khung hình phân tích: $totalFrames.
+- Những ảnh này có thể xem lại qua Timeline hoặc chức năng quản lý ảnh.'''),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

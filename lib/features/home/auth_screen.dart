@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_state.dart';
+import '../../core/slide_page_route.dart';
 import '../../data/remote/api_service.dart';
 import '../../features/profile/user.dart';
 import '../admin/admin_dashboard_page.dart';
@@ -38,21 +39,30 @@ class _AuthScreenState extends State<AuthScreen> {
           avatar: avatarUrl,
           role: user['role'] ?? 'student',
         );
-        isLoggedInNotifier.value = true;
 
         if (user['role'] == 'admin') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
-          );
+          isLoggedInNotifier.value = false;
+          if (mounted) {
+            Navigator.of(context).pushAndRemoveUntil(
+              SlidePageRoute(page: const AdminDashboardPage()),
+              (route) => false,
+            );
+          }
+        } else {
+          isLoggedInNotifier.value = true;
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đăng nhập thất bại: ${e.toString()}'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Đăng nhập thất bại: ${e.toString()}'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
       }
     } else {
       final name = _nameController.text;
@@ -95,6 +105,14 @@ class _AuthScreenState extends State<AuthScreen> {
     }
     setState(() => _isLogin = true);
     _handleAuth();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
+    super.dispose();
   }
 
   @override
