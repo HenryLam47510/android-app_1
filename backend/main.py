@@ -26,11 +26,13 @@ app = FastAPI()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Tạo thư mục uploads/segments và uploads/frames khi khởi động
+# Tạo thư mục uploads/segments, uploads/frames và uploads/avatars khi khởi động
 UPLOAD_SEGMENTS_DIR = os.path.join(BASE_DIR, 'uploads', 'segments')
 UPLOAD_FRAMES_DIR = os.path.join(BASE_DIR, 'uploads', 'frames')
+UPLOAD_AVATARS_DIR = os.path.join(BASE_DIR, 'uploads', 'avatars')
 os.makedirs(UPLOAD_SEGMENTS_DIR, exist_ok=True)
 os.makedirs(UPLOAD_FRAMES_DIR, exist_ok=True)
+os.makedirs(UPLOAD_AVATARS_DIR, exist_ok=True)
 
 # Cho phép tất cả các nguồn truy cập (Web/Mobile/Desktop)
 app.add_middleware(
@@ -1145,6 +1147,59 @@ def upload_admin_user_avatar(user_id: int, avatar: UploadFile = File(...)):
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/users/{user_id}/avatar")
+def upload_user_avatar(user_id: int, avatar: UploadFile = File(...)):
+    """Cho phép user tự upload avatar của chính họ. Hỗ trợ: JPG, JPEG, PNG, GIF, WebP, BMP"""
+    try:
+        # Kiểm tra content type
+        if not avatar.content_type or not avatar.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail='Tệp phải là ảnh. Vui lòng chọn tệp ảnh.')
+
+        # Kiểm tra phần mở rộng tệp
+        allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
+        file_ext = os.path.splitext(avatar.filename)[1].lower()
+        if file_ext not in allowed_extensions:
+            raise HTTPException(
+                status_code=400,
+                detail=f'Định dạng ảnh không được hỗ trợ. Vui lòng sử dụng: {", ".join([e[1:].upper() for e in allowed_extensions])}'
+            )
+
+        # Kiểm tra kích thước tệp (tối đa 10MB)
+        avatar_content = avatar.file.read()
+        max_size = 10 * 1024 * 1024  # 10MB
+        if len(avatar_content) > max_size:
+            raise HTTPException(
+                status_code=400,
+                detail=f'Kích thước ảnh quá lớn. Tối đa {max_size // (1024*1024)}MB.'
+            )
+
+        # Xác thực rằng tệp là ảnh hợp lệ
+        try:
+            img = Image.open(io.BytesIO(avatar_content))
+            img.verify()
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f'Tệp ảnh không hợp lệ: {str(e)}')
+
+        avatar_dir = _avatar_directory(user_id)
+        # Xóa file avatar cũ nếu có
+        for existing in glob.glob(os.path.join(avatar_dir, 'avatar.*')):
+            try:
+                os.remove(existing)
+            except Exception:
+                pass
+
+        extension = file_ext or '.png'
+        saved_path = os.path.join(avatar_dir, f'avatar{extension}')
+        with open(saved_path, 'wb') as f:
+            f.write(avatar_content)
+
+        return {'avatar_url': _avatar_url_for_user(user_id, None)}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f'Lỗi upload ảnh: {str(exc)}')
 
 
 @app.get("/admin/users/{user_id}/avatar")

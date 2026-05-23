@@ -213,6 +213,64 @@ class ApiService {
     throw Exception('Failed to upload avatar: $responseData');
   }
 
+  static Future<String> uploadUserAvatar({
+    required int userId,
+    Uint8List? bytes,
+    String? filename,
+    String? path,
+  }) async {
+    // Validate file type
+    final validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
+    final filenameToUse =
+        filename ?? (path != null ? path.split('/').last : 'avatar.jpg');
+    final extension = filenameToUse.split('.').last.toLowerCase();
+
+    if (!validExtensions.contains(extension)) {
+      throw Exception(
+        'Định dạng ảnh không được hỗ trợ. Vui lòng sử dụng: jpg, jpeg, png, gif, webp, bmp',
+      );
+    }
+
+    // Validate file size (max 10MB)
+    final fileSize = bytes?.length ?? 0;
+    if (fileSize > 10 * 1024 * 1024) {
+      throw Exception('Kích thước ảnh quá lớn (tối đa 10MB)');
+    }
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/users/$userId/avatar'),
+    );
+
+    if (bytes != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes('avatar', bytes, filename: filenameToUse),
+      );
+    } else if (path != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'avatar',
+          path,
+          filename: filenameToUse,
+        ),
+      );
+    } else {
+      throw Exception('Không có tệp ảnh được cung cấp');
+    }
+
+    final response = await request.send();
+    final responseData = await response.stream.bytesToString();
+    if (response.statusCode == 200) {
+      try {
+        final json = jsonDecode(responseData) as Map<String, dynamic>;
+        final avatarUrl = json['avatar_url'] as String?;
+        if (avatarUrl != null) return _makeAbsoluteUrl(avatarUrl);
+      } catch (_) {}
+      return _makeAbsoluteUrl('/admin/users/$userId/avatar');
+    }
+    throw Exception('Lỗi upload ảnh: ${response.statusCode} - $responseData');
+  }
+
   static Future<List<Map<String, dynamic>>> getAdminUserDailyStats({
     int? userId,
     DateTime? date,

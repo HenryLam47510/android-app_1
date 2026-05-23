@@ -49,9 +49,8 @@ class _AuthScreenState extends State<AuthScreen> {
             );
           }
         } else {
-          isLoggedInNotifier.value = true;
           if (mounted) {
-            Navigator.of(context).pop();
+            isLoggedInNotifier.value = true;
           }
         }
       } catch (e) {

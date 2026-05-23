@@ -198,43 +198,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
                 const SizedBox(height: 16),
                 const Text(
-                  'Biểu đồ chuyên cần',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  height: 120,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.indigo.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Chuyên cần theo lớp trong 7 ngày',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            _buildAttendanceMarker(0.8, 'AI01'),
-                            _buildAttendanceMarker(0.7, 'WEB02'),
-                            _buildAttendanceMarker(0.95, 'DS03'),
-                            _buildAttendanceMarker(0.65, 'ML04'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-                const Text(
                   'Hoạt động gần đây',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),

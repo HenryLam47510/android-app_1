@@ -1,112 +1,142 @@
 # Study Emotion Monitor
 
-## Giới thiệu
+## 1. Introduction
 
-Study Emotion Monitor là một hệ thống học tập thông minh gồm:
+Study Emotion Monitor is an intelligent learning monitoring system that tracks study behavior, emotional state, and focus level. It includes a Flutter frontend, a Python/FastAPI backend, and an admin dashboard for reviewing emotion history, snapshots, and analytics.
 
-- Ứng dụng Flutter để giám sát thái độ, trạng thái cảm xúc và mức độ tập trung khi học.
-- Backend Python/FastAPI để xử lý ảnh, nhận diện cảm xúc và lưu trữ kết quả vào MySQL.
-- Dashboard admin để xem lịch sử cảm xúc, ảnh snapshot và thống kê học tập.
+## 2. Features
 
-Mục tiêu dự án:
+- Student and admin account management
+- Periodic camera snapshot capture and emotion analysis
+- Emotion history tracking with snapshots
+- Daily emotion timeline visualization
+- Admin dashboard for user, video, and emotion statistics
+- API endpoints for login, frame analysis, and admin reporting
+- Image storage and retrieval for detected frames
 
-- Giúp học sinh theo dõi trạng thái tập trung và cảm xúc khi học.
-- Cung cấp dữ liệu lịch sử, timeline và cảnh báo qua ảnh chụp định kỳ.
-- Hỗ trợ quản trị viên quản lý video, người dùng và dữ liệu AI.
+## 3. System Architecture
 
-## Công nghệ sử dụng
+The system consists of:
 
-- Flutter / Dart: giao diện mobile/web/desktop
-- Python 3.x: backend API
-- FastAPI: framework HTTP cho backend
-- MySQL / MariaDB: cơ sở dữ liệu
-- Camera plugin Flutter: chụp ảnh/videostream
-- PIL / ultralytics / torch: xử lý ảnh và model nhận diện
-- Uvicorn: server backend
+- **Flutter frontend**: mobile/web/desktop UI built with Flutter and Dart.
+- **Backend API**: Python FastAPI service for image processing, emotion detection, and database persistence.
+- **AI model**: image-based emotion recognition model stored in `backend/AI/best.pt`.
+- **Database**: MySQL/MariaDB for storing users, video metadata, and emotion events.
 
-## Cấu trúc thư mục chính
+## 4. Workflow
+
+1. User logs in through the frontend.
+2. The frontend captures camera frames periodically.
+3. Frames are sent to the backend for emotion analysis.
+4. Backend processes each frame and saves the result in the database.
+5. Admin dashboard queries emotion history and displays analytics.
+
+## 5. Folder Structure
 
 ```
-├── android/                    # cấu hình Android
-├── app/                        # module Android gốc
-├── backend/                    # backend FastAPI và xử lý AI
-│   ├── main.py                 # điểm vào backend
+├── android/                    # Android native configuration
+├── app/                        # Android module and native app files
+├── backend/                    # FastAPI backend and AI processing code
+│   ├── main.py                 # Backend entry point and API routes
 │   ├── concentration_calculator.py
 │   ├── video_processor.py
-│   ├── requirements.txt
-│   └── AI/                     # model và dữ liệu liên quan
-├── lib/                        # mã nguồn Flutter
-│   ├── features/               # giao diện và chức năng chính
-│   ├── data/remote/             # dịch vụ API và cấu hình remote
-│   ├── models/                 # model dữ liệu Flutter
+│   ├── requirements.txt        # Python dependencies
+│   └── AI/                     # AI model and related files
+├── fontend/                    # Flutter application source code
+│   ├── constants/
+│   ├── core/
+│   ├── data/
+│   │   ├── local/
+│   │   └── remote/
+│   ├── features/
+│   ├── models/
 │   └── main.dart
-├── linux/                      # cấu hình Linux desktop
-├── test/                       # test Flutter
-├── web/                        # cấu hình web
-├── windows/                    # cấu hình Windows desktop
-└── pubspec.yaml                # cấu hình Flutter
+├── linux/                      # Linux desktop build configuration
+├── test/                       # Flutter widget and unit tests
+├── web/                        # Web build configuration and assets
+├── windows/                    # Windows desktop build configuration
+└── pubspec.yaml                # Flutter project configuration
 ```
 
-## Yêu cầu môi trường
+## 6. Tech Stack
+
+- Flutter / Dart
+- Python 3.10+
+- FastAPI
+- MySQL / MariaDB
+- Uvicorn
+- PIL / ultralytics / torch
+- Flutter Camera plugin
+
+## 7. Environment Setup
 
 ### Backend
 
-- Python 3.10+ hoặc 3.11+
-- MySQL/MariaDB
-- Các package Python trong `backend/requirements.txt`
+1. Open a terminal in `backend/`.
+2. Create and activate a virtual environment:
+
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+3. Install Python dependencies:
+
+```powershell
+pip install -r requirements.txt
+```
 
 ### Frontend
 
-- Flutter 3.x hoặc mới hơn
-- Dart SDK tương thích
-- Thiết bị hoặc trình duyệt hỗ trợ Flutter
+1. Ensure Flutter SDK is installed and configured.
+2. Install Flutter dependencies:
 
-## Database setup
+```powershell
+cd d:\Code-adr
+flutter pub get
+```
 
-1. Tạo database MySQL/MariaDB với tên `emotion_system`.
-2. Thực thi file SQL schema nếu có hoặc tạo cấu trúc bảng sau:
-   - `users`
-   - `frame_emotions`
-   - `videos`
-   - `video_segments`
-   - `study_sessions`
-   - `notifications`
-   - `emotions`
-3. Cấu hình kết nối MySQL trong backend bằng biến môi trường hoặc trực tiếp trong `backend/main.py`:
-   - `MYSQL_HOST`
-   - `MYSQL_PORT`
-   - `MYSQL_USER`
-   - `MYSQL_PASSWORD`
-   - `MYSQL_DB`
+## 8. Database Setup
 
-## File cấu hình
+1. Create a MySQL or MariaDB database named `emotion_system`.
+2. Create the required tables if no SQL schema file exists.
+3. Configure backend database connection settings using environment variables or directly in `backend/main.py`.
 
-- `pubspec.yaml`: cấu hình Flutter, dependencies frontend.
-- `backend/requirements.txt`: dependencies Python backend.
-- `backend/main.py`: cấu hình API, kết nối DB, routes.
-- `backend/AI/best.pt`: model nhận diện ảnh.
-- `local.properties`, `gradle.properties`: cấu hình Android/Gradle.
+### Recommended tables
 
-## Workflow Git
+- `users`
+- `frame_emotions`
+- `videos`
+- `video_segments`
+- `study_sessions`
+- `notifications`
+- `emotions`
 
-- Tạo branch mới cho mỗi tính năng hoặc sửa lỗi: `git checkout -b feature/<tên>` hoặc `git checkout -b fix/<tên>`.
-- Commit nhỏ, rõ ràng.
-- Merge về branch chính sau khi review và test.
-- Sử dụng `git push origin <branch>` để đẩy lên remote.
+### Environment variables
 
-## Tính năng hiện có
+- `MYSQL_HOST`
+- `MYSQL_PORT`
+- `MYSQL_USER`
+- `MYSQL_PASSWORD`
+- `MYSQL_DB`
 
-- Quản lý người dùng student/admin
-- Chụp ảnh định kỳ từ camera để phân tích cảm xúc
-- Ghi lại lịch sử cảm xúc và ảnh snapshot
-- Hiển thị timeline cảm xúc theo ngày
-- Bảng điều khiển admin xem thống kê, video và lịch sử
-- Lưu trữ và tải ảnh frame qua endpoint `/frame-emotion/{id}/image`
-- API backend gồm: login, analyze-frame, admin/emotion-timeline, admin/dashboard, admin/videos
+## 9. API Documentation
 
-## Cách cài đặt
+### Common endpoints
 
-### Backend
+- `POST /login` - authenticate users
+- `POST /analyze-frame` - upload a frame for emotion analysis
+- `GET /admin/emotion-timeline` - retrieve emotion timeline data
+- `GET /admin/dashboard` - retrieve dashboard statistics
+- `GET /admin/videos` - list stored videos and metadata
+- `GET /frame-emotion/{id}/image` - fetch saved snapshot images
+
+> Note: Exact routes may vary in `backend/main.py`.
+
+## 10. Installation
+
+### Backend installation
 
 ```powershell
 cd backend
@@ -115,42 +145,64 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### Frontend
+### Frontend installation
 
 ```powershell
 cd d:\Code-adr
 flutter pub get
 ```
 
-## Cách chạy hệ thống
+## 11. Running the System
 
-### Chạy backend
+### Start backend
 
 ```powershell
 cd backend
-.\.venv\Scripts\Activate.ps1
 python main.py
 ```
 
-### Chạy frontend
+### Start frontend
 
 ```powershell
-cd d:\Code-adr
 flutter run
 ```
 
-Hoặc chạy web:
+### Run on web
 
 ```powershell
 flutter run -d chrome
 ```
 
-## Lưu ý
+## 12. Troubleshooting
 
-- Đảm bảo backend đang chạy trước khi frontend khởi động.
-- Cấu hình đúng MySQL và tạo dữ liệu mẫu nếu cần.
-- Nếu sử dụng camera, cấp quyền truy cập cho ứng dụng.
+- Ensure the backend is running before starting the frontend.
+- Verify the database connection settings and credentials.
+- If camera access fails, confirm permissions are granted.
+- If dependencies fail to install, check Python and Flutter SDK versions.
+- Review backend logs for FastAPI and model loading errors.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 13. Limitations
+
+- Emotion detection depends on the accuracy of the provided AI model.
+- The project may require additional optimization for production use.
+- Database schema and migrations are not fully packaged in this repository.
+- Camera permission handling may differ by platform.
+
+## 14. Future Improvements
+
+- Add full database migration scripts.
+- Improve emotion classification accuracy.
+- Add user session analytics and alerts.
+- Expand admin dashboard reports and charts.
+- Support offline caching and retry logic.
+
+## 15. Contributors
+
+- Original project author
+- Flutter frontend developers
+- Python backend developers
+- AI model integration team
+
+---
+
+For more help with Flutter development, visit the [Flutter documentation](https://docs.flutter.dev/).
