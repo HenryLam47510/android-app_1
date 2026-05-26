@@ -62,20 +62,25 @@ INSERT INTO `emotions` (`id`, `video_id`, `emotion`, `confidence`, `detected_at`
 --
 
 CREATE TABLE `notifications` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `title` varchar(255) DEFAULT NULL,
   `message` text DEFAULT NULL,
+  `category` varchar(100) DEFAULT NULL,
+  `status` varchar(50) DEFAULT NULL,
   `is_read` tinyint(1) DEFAULT 0,
-  `created_at` datetime DEFAULT current_timestamp()
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_notifications_user` (`user_id`),
+  KEY `idx_notifications_unread` (`user_id`, `is_read`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `notifications`
 --
 
-INSERT INTO `notifications` (`id`, `user_id`, `title`, `message`, `is_read`, `created_at`) VALUES
-(1, 2, 'Study Reminder', 'Your class is starting now', 0, '2026-04-23 05:28:27');
+INSERT INTO `notifications` (`id`, `user_id`, `title`, `message`, `category`, `status`, `is_read`, `created_at`) VALUES
+(1, 2, 'Study Reminder', 'Your class is starting now', 'study_reminder', 'new', 0, '2026-04-23 05:28:27');
 
 -- --------------------------------------------------------
 
@@ -112,6 +117,17 @@ CREATE TABLE `users` (
   `password` varchar(255) NOT NULL,
   `role` varchar(20) NOT NULL CHECK (`role` in ('student','admin')),
   `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `hidden_timeline_days` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `record_date` date NOT NULL,
+  `hidden_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_user_date` (`user_id`, `record_date`),
+  KEY `idx_hidden_user` (`user_id`),
+  CONSTRAINT `hidden_timeline_days_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --

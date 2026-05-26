@@ -62,60 +62,126 @@ class _ProfilePageState extends State<ProfilePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header: User Info
-                Center(
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundImage: NetworkImage(user.avatar),
+                Card(
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.lightBlue.shade50,
+                          Colors.lightBlue.shade100,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            user.name,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          if (isAdmin)
-                            const Padding(
-                              padding: EdgeInsets.only(left: 8.0),
-                              child: Icon(
-                                Icons.verified,
-                                color: Colors.blue,
-                                size: 20,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 24,
+                    ),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 72,
+                          backgroundColor: Colors.white,
+                          backgroundImage: NetworkImage(user.avatar),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              user.name,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                        ],
-                      ),
-                      Text(
-                        user.email,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            SlidePageRoute(page: const EditProfilePage()),
-                          );
-                        },
-                        icon: const Icon(Icons.edit, size: 18),
-                        label: const Text("Chỉnh sửa Profile"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isAdmin
-                              ? Colors.indigo
-                              : Colors.lightBlue, // Màu dựa trên role
-                          foregroundColor: Colors.white,
+                            if (isAdmin)
+                              const Padding(
+                                padding: EdgeInsets.only(left: 8.0),
+                                child: Icon(
+                                  Icons.verified,
+                                  color: Colors.blue,
+                                  size: 22,
+                                ),
+                              ),
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 6),
+                        Text(
+                          user.email,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              SlidePageRoute(page: const EditProfilePage()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isAdmin
+                                ? Colors.indigo
+                                : Colors.blue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            child: Text(
+                              'Chỉnh sửa hồ sơ',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: _buildProfileStat(
+                                'Focus Rate',
+                                '78%',
+                                Icons.bar_chart,
+                                Colors.teal,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildProfileStat(
+                                'Study Days',
+                                '12',
+                                Icons.calendar_today,
+                                Colors.blue,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildProfileStat(
+                                'Dominant Mood',
+                                'Focused',
+                                Icons.emoji_objects,
+                                Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
 
                 // --- ADMIN PANEL (Chỉ hiện cho Admin) ---
                 if (isAdmin) ...[
@@ -166,10 +232,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 32),
                 ],
 
-                // Section: Thống kê học tập (Study Statistics)
+                // Section: AI Study Monitor
                 const Text(
-                  "Thống kê học tập",
+                  "AI Study Monitor",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  "Tổng quan nhanh các chỉ số học tập và cảm xúc.",
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 const SizedBox(height: 12),
                 GridView.count(
@@ -414,6 +485,38 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       trailing: const Icon(Icons.chevron_right, size: 20),
       onTap: onTap ?? () {},
+    );
+  }
+
+  Widget _buildProfileStat(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        ],
+      ),
     );
   }
 

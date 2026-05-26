@@ -1,5 +1,61 @@
 [
   {
+    "user_id": 2,
+    "away_seconds": 9,
+    "source": "background",
+    "note": null,
+    "timestamp": "2026-05-23T08:50:18.150310",
+    "user_name": "HoangDung"
+  },
+  {
+    "user_id": 2,
+    "away_seconds": 1,
+    "source": "tab",
+    "note": null,
+    "timestamp": "2026-05-23T08:50:08.199415",
+    "user_name": "HoangDung"
+  },
+  {
+    "user_id": 2,
+    "away_seconds": 16,
+    "source": "background",
+    "note": null,
+    "timestamp": "2026-05-23T08:50:06.732720",
+    "user_name": "HoangDung"
+  },
+  {
+    "user_id": 3,
+    "away_seconds": 31,
+    "source": "tab",
+    "note": null,
+    "timestamp": "2026-05-23T08:36:45.699010",
+    "user_name": "HoangLam"
+  },
+  {
+    "user_id": 3,
+    "away_seconds": 5,
+    "source": "background",
+    "note": null,
+    "timestamp": "2026-05-23T08:36:45.629999",
+    "user_name": "HoangLam"
+  },
+  {
+    "user_id": 3,
+    "away_seconds": 3,
+    "source": "background",
+    "note": null,
+    "timestamp": "2026-05-23T08:36:27.686218",
+    "user_name": "HoangLam"
+  },
+  {
+    "user_id": 3,
+    "away_seconds": 2,
+    "source": "background",
+    "note": null,
+    "timestamp": "2026-05-23T08:36:20.018697",
+    "user_name": "HoangLam"
+  },
+  {
     "user_id": 3,
     "away_seconds": 23,
     "source": "background",

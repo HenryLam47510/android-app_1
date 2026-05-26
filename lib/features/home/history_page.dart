@@ -12,6 +12,8 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   late Future<List<Map<String, dynamic>>> _timelineFuture;
   DateTime _selectedDate = DateTime.now();
+  bool _hiddenChecked = false;
+  bool _isHidden = false;
 
   @override
   void initState() {
@@ -24,11 +26,76 @@ class _HistoryPageState extends State<HistoryPage> {
         ? currentUserNotifier.value.id
         : 1;
     setState(() {
+      _hiddenChecked = false;
+      _isHidden = false;
       _timelineFuture = ApiService.getEmotionTimeline(
         userId,
         date: _selectedDate,
       );
     });
+
+    ApiService.isEmotionTimelineDateHidden(userId, _selectedDate)
+        .then((hidden) {
+          if (!mounted) return;
+          setState(() {
+            _hiddenChecked = true;
+            _isHidden = hidden;
+          });
+        })
+        .catchError((_) {
+          if (!mounted) return;
+          setState(() {
+            _hiddenChecked = true;
+            _isHidden = false;
+          });
+        });
+  }
+
+  Future<void> _hideCurrentDate() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ẩn lịch sử ngày này'),
+        content: const Text(
+          'Ngày này sẽ không còn hiển thị trong lịch sử của bạn, nhưng admin vẫn có thể xem được.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Ẩn', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    final userId = currentUserNotifier.value.id > 0
+        ? currentUserNotifier.value.id
+        : 1;
+    final success = await ApiService.hideEmotionTimelineDate(
+      userId,
+      _selectedDate,
+    );
+    if (success) {
+      _refreshHistory();
+    }
+  }
+
+  Future<void> _restoreCurrentDate() async {
+    final userId = currentUserNotifier.value.id > 0
+        ? currentUserNotifier.value.id
+        : 1;
+    final success = await ApiService.restoreEmotionTimelineDate(
+      userId,
+      _selectedDate,
+    );
+    if (success) {
+      _refreshHistory();
+    }
   }
 
   List<Map<String, dynamic>> _groupByTimeBucket(
@@ -91,6 +158,12 @@ class _HistoryPageState extends State<HistoryPage> {
             icon: const Icon(Icons.refresh),
             onPressed: _refreshHistory,
           ),
+          if (_hiddenChecked)
+            IconButton(
+              icon: Icon(_isHidden ? Icons.restore : Icons.delete_outline),
+              tooltip: _isHidden ? 'Khôi phục lịch sử' : 'Ẩn ngày này',
+              onPressed: _isHidden ? _restoreCurrentDate : _hideCurrentDate,
+            ),
           IconButton(
             icon: const Icon(Icons.calendar_today),
             onPressed: () async {
@@ -143,20 +216,35 @@ class _HistoryPageState extends State<HistoryPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.history_outlined,
+                    _hiddenChecked && _isHidden
+                        ? Icons.visibility_off_outlined
+                        : Icons.history_outlined,
                     size: 64,
                     color: Colors.grey[400],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    "Chưa có dữ liệu nhận diện cho ngày này",
-                    style: TextStyle(color: Colors.grey),
+                  Text(
+                    _hiddenChecked && _isHidden
+                        ? 'Lịch sử ngày này đã bị ẩn khỏi phần xem của bạn.'
+                        : 'Chưa có dữ liệu nhận diện cho ngày này',
+                    style: const TextStyle(color: Colors.grey),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    "Hãy bật camera và học để thu thập dữ liệu.",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  Text(
+                    _hiddenChecked && _isHidden
+                        ? 'Admin vẫn có thể xem kết quả của ngày này.'
+                        : 'Hãy bật camera và học để thu thập dữ liệu.',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    textAlign: TextAlign.center,
                   ),
+                  if (_hiddenChecked && _isHidden) ...[
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _restoreCurrentDate,
+                      child: const Text('Khôi phục lịch sử'),
+                    ),
+                  ],
                 ],
               ),
             );

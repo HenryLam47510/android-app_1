@@ -163,6 +163,252 @@ def _save_frame_file(user_id: int, timestamp: str, label: str, image: Image.Imag
     return os.path.relpath(stored_path, BASE_DIR).replace('\\', '/')
 
 
+def _has_recent_notification(cursor, user_id: int, category: str, status: str, days: int = 1) -> bool:
+    cursor.execute(
+        "SELECT 1 FROM notifications WHERE user_id = %s AND category = %s AND status = %s "
+        "AND created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY) LIMIT 1",
+        (user_id, category, status, days),
+    )
+    return cursor.fetchone() is not None
+
+
+def _create_notification(
+    cursor,
+    user_id: int,
+    title: str,
+    message: str,
+    category: str,
+    status: str,
+    days: int = 1,
+) -> None:
+    if _has_recent_notification(cursor, user_id, category, status, days):
+        return
+    cursor.execute(
+        "INSERT INTO notifications (user_id, title, message, category, status, is_read) "
+        "VALUES (%s, %s, %s, %s, %s, 0)",
+        (user_id, title, message, category, status),
+    )
+
+
+def _count_emotion_events_today(cursor, user_id: int, labels: list[str]) -> int:
+    if not labels:
+        return 0
+    placeholders = ','.join(['%s'] * len(labels))
+    query = (
+        f"SELECT COUNT(*) AS cnt FROM frame_emotions WHERE user_id = %s "
+        f"AND emotion IN ({placeholders}) AND DATE(timestamp) = CURDATE()"
+    )
+    cursor.execute(query, [user_id, *labels])
+    row = cursor.fetchone()
+    return int(row['cnt'] or 0)
+
+
+def _count_emotion_days(cursor, user_id: int, labels: list[str], days: int = 3) -> int:
+    if not labels:
+        return 0
+    placeholders = ','.join(['%s'] * len(labels))
+    query = (
+        f"SELECT COUNT(DISTINCT DATE(timestamp)) AS cnt FROM frame_emotions "
+        f"WHERE user_id = %s AND emotion IN ({placeholders}) "
+        f"AND DATE(timestamp) >= DATE_SUB(CURDATE(), INTERVAL %s DAY)"
+    )
+    cursor.execute(query, [user_id, *labels, days])
+    row = cursor.fetchone()
+    return int(row['cnt'] or 0)
+
+
+def _count_frames_today(cursor, user_id: int) -> int:
+    cursor.execute(
+        "SELECT COUNT(*) AS cnt FROM frame_emotions WHERE user_id = %s AND DATE(timestamp) = CURDATE()",
+        (user_id,),
+    )
+    row = cursor.fetchone()
+    return int(row['cnt'] or 0)
+
+
+def _generate_rule_notifications(
+    cursor,
+    user_id: int,
+    label: str,
+    confidence: float,
+    timestamp_dt: datetime,
+) -> None:
+    label = label.lower()
+
+    low_concentration_labels = ['sad', 'angry', 'disgust', 'sleepy', 'absent']
+    fatigue_labels = ['sleepy']
+    negative_labels = ['sad', 'angry', 'frustrated']
+    good_focus_labels = ['focus', 'natural', 'neutral', 'happy']
+
+    # Real-time notification
+    if label in low_concentration_labels:
+        _create_notification(
+            cursor,
+            user_id,
+            'Attention Drop Detected',
+            'Hệ thống vừa phát hiện bạn đang mất tập trung. Hãy thử nghỉ ngắn hoặc thay đổi môi trường học tập.',
+            'low_concentration',
+            'new',
+        )
+
+    if label in fatigue_labels:
+        _create_notification(
+            cursor,
+            user_id,
+            'Fatigue Detected',
+            'Bạn có dấu hiệu mệt mỏi trong quá trình học. Nghỉ ngơi vài phút có thể giúp cải thiện hiệu suất.',
+            'fatigue',
+            'new',
+        )
+
+    if label in negative_labels:
+        _create_notification(
+            cursor,
+            user_id,
+            'Emotional Change Detected',
+            'Hệ thống vừa phát hiện trạng thái cảm xúc tiêu cực. Hãy dành vài phút thư giãn trước khi tiếp tục học.',
+            'negative_emotion',
+            'new',
+        )
+
+    if label in good_focus_labels and confidence >= 0.8:
+        _create_notification(
+            cursor,
+            user_id,
+            'Great Focus Session',
+            'Bạn đang duy trì mức tập trung rất tốt. Hãy tiếp tục phát huy!',
+            'good_focus',
+            'new',
+        )
+
+    if label == 'absent':
+        _create_notification(
+            cursor,
+            user_id,
+            'Face Not Detected',
+            'Không phát hiện khuôn mặt trong khung hình. Vui lòng kiểm tra vị trí camera.',
+            'camera',
+            'new',
+        )
+
+    # Frequent notifications
+    low_concentration_today = _count_emotion_events_today(cursor, user_id, low_concentration_labels)
+    if low_concentration_today >= 4:
+        _create_notification(
+            cursor,
+            user_id,
+            'Frequent Distraction Detected',
+            'Bạn đã mất tập trung nhiều lần trong buổi học hôm nay. Hãy cân nhắc chia nhỏ thời gian học hoặc giảm yếu tố gây xao nhãng.',
+            'low_concentration',
+            'frequent',
+        )
+
+    fatigue_today = _count_emotion_events_today(cursor, user_id, fatigue_labels)
+    if fatigue_today >= 3:
+        _create_notification(
+            cursor,
+            user_id,
+            'Repeated Fatigue Warning',
+            'Trạng thái mệt mỏi xuất hiện nhiều lần trong hôm nay. Hãy kiểm tra thời lượng học hoặc chất lượng giấc ngủ.',
+            'fatigue',
+            'frequent',
+        )
+
+    negative_today = _count_emotion_events_today(cursor, user_id, negative_labels)
+    if negative_today >= 3:
+        _create_notification(
+            cursor,
+            user_id,
+            'Frequent Negative Emotion',
+            'Cảm xúc tiêu cực xuất hiện nhiều lần trong hôm nay. Bạn nên nghỉ ngơi hoặc thay đổi phương pháp học.',
+            'negative_emotion',
+            'frequent',
+        )
+
+    good_focus_today = _count_emotion_events_today(cursor, user_id, good_focus_labels)
+    if good_focus_today >= 5:
+        _create_notification(
+            cursor,
+            user_id,
+            'Consistent Performance',
+            'Bạn duy trì sự tập trung tốt trong nhiều khoảng thời gian hôm nay. Kết quả học tập đang rất tích cực.',
+            'good_focus',
+            'frequent',
+        )
+
+    frames_today = _count_frames_today(cursor, user_id)
+    if frames_today >= 40:
+        _create_notification(
+            cursor,
+            user_id,
+            'Extended Study Sessions',
+            'Bạn thường xuyên học trong thời gian dài hôm nay. Đừng quên nghỉ giữa giờ.',
+            'overstudy',
+            'frequent',
+        )
+
+    # Trend notifications
+    low_concentration_days = _count_emotion_days(cursor, user_id, low_concentration_labels, 3)
+    if low_concentration_days >= 2:
+        _create_notification(
+            cursor,
+            user_id,
+            'Long-Term Concentration Issue',
+            'Hệ thống ghi nhận tình trạng mất tập trung xuất hiện trong nhiều ngày liên tiếp. Bạn nên điều chỉnh lịch học hoặc thời gian nghỉ ngơi.',
+            'low_concentration',
+            'trend',
+            7,
+        )
+
+    fatigue_days = _count_emotion_days(cursor, user_id, fatigue_labels, 3)
+    if fatigue_days >= 2:
+        _create_notification(
+            cursor,
+            user_id,
+            'Persistent Fatigue Pattern',
+            'Hệ thống ghi nhận dấu hiệu mệt mỏi kéo dài trong nhiều ngày học. Bạn nên cân bằng lại thời gian nghỉ ngơi.',
+            'fatigue',
+            'trend',
+            7,
+        )
+
+    negative_days = _count_emotion_days(cursor, user_id, negative_labels, 3)
+    if negative_days >= 2:
+        _create_notification(
+            cursor,
+            user_id,
+            'Continuous Emotional Stress',
+            'Hệ thống phát hiện trạng thái cảm xúc tiêu cực kéo dài trong nhiều ngày. Hãy chú ý cân bằng học tập và nghỉ ngơi.',
+            'negative_emotion',
+            'trend',
+            7,
+        )
+
+    good_focus_days = _count_emotion_days(cursor, user_id, good_focus_labels, 3)
+    if good_focus_days >= 2:
+        _create_notification(
+            cursor,
+            user_id,
+            'Excellent Study Habit',
+            'Hệ thống ghi nhận hiệu suất học tập tích cực trong nhiều ngày liên tiếp. Hãy duy trì thói quen này.',
+            'good_focus',
+            'trend',
+            7,
+        )
+
+    overstudy_days = _count_frames_today(cursor, user_id) >= 40 and _count_emotion_days(cursor, user_id, good_focus_labels + low_concentration_labels + fatigue_labels + negative_labels, 3) >= 2
+    if overstudy_days:
+        _create_notification(
+            cursor,
+            user_id,
+            'Overstudy Pattern Detected',
+            'Hệ thống ghi nhận bạn học liên tục trong thời gian dài nhiều ngày liên tiếp. Hãy chú ý sức khỏe và nghỉ ngơi hợp lý.',
+            'overstudy',
+            'trend',
+            7,
+        )
+
+
 def _create_user_storage_dir(user_id: int) -> str:
     user_dir = os.path.join(BASE_DIR, 'uploads', str(user_id))
     today_dir = os.path.join(user_dir, datetime.utcnow().strftime('%Y-%m-%d'))
@@ -346,7 +592,22 @@ async def analyze_frame(
     except ValueError:
         timestamp_dt = datetime.utcnow()
 
-    prediction = _predict_image(image)
+    try:
+        prediction = _predict_image(image)
+    except Exception as exc:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                _create_notification(
+                    cursor,
+                    user_id,
+                    'System Connection Issue',
+                    'Không thể kết nối tới hệ thống phân tích. Vui lòng thử lại sau.',
+                    'system',
+                    'new',
+                )
+            conn.commit()
+        raise HTTPException(status_code=500, detail=f"Lỗi phân tích: {str(exc)}")
+
     previous_frame = _get_recent_frame_records(user_id, 1)
     previous_emotion = previous_frame[0]['emotion'] if previous_frame else None
     state_change = previous_emotion != prediction['label']
@@ -374,6 +635,13 @@ async def analyze_frame(
                 (user_id, prediction['label'], prediction['confidence'], timestamp_dt, state_change, previous_emotion),
             )
             frame_id = cursor.lastrowid
+            _generate_rule_notifications(
+                cursor,
+                user_id,
+                prediction['label'],
+                prediction['confidence'],
+                timestamp_dt,
+            )
         conn.commit()
 
     saved_path = None
@@ -399,6 +667,43 @@ async def analyze_frame(
         "saved_to_db": True,
         "file_path": saved_path,
     }
+
+
+@app.get("/notifications")
+def get_notifications(user_id: int):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT id, user_id, title, message, category, status, is_read, created_at "
+                    "FROM notifications WHERE user_id = %s "
+                    "ORDER BY is_read ASC, created_at DESC",
+                    (user_id,),
+                )
+                rows = cursor.fetchall()
+        for row in rows:
+            created_at = row.get('created_at')
+            if created_at is not None and not isinstance(created_at, str):
+                row['created_at'] = created_at.isoformat()
+            row['is_read'] = bool(row['is_read'])
+        return rows
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/notifications/{notification_id}/read")
+def mark_notification_read(notification_id: int):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE notifications SET is_read = 1 WHERE id = %s",
+                    (notification_id,),
+                )
+                conn.commit()
+        return {"success": True}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 @app.get("/frame-emotion/{frame_id}/image")
@@ -1153,10 +1458,6 @@ def upload_admin_user_avatar(user_id: int, avatar: UploadFile = File(...)):
 def upload_user_avatar(user_id: int, avatar: UploadFile = File(...)):
     """Cho phép user tự upload avatar của chính họ. Hỗ trợ: JPG, JPEG, PNG, GIF, WebP, BMP"""
     try:
-        # Kiểm tra content type
-        if not avatar.content_type or not avatar.content_type.startswith('image/'):
-            raise HTTPException(status_code=400, detail='Tệp phải là ảnh. Vui lòng chọn tệp ảnh.')
-
         # Kiểm tra phần mở rộng tệp
         allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
         file_ext = os.path.splitext(avatar.filename)[1].lower()
@@ -1326,6 +1627,89 @@ def admin_user_daily_stats(user_id: int = None, date: str = None):
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
+
+@app.get("/emotion-timeline/{user_id}")
+def get_user_emotion_timeline(user_id: int, date: str = None):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                if date:
+                    cursor.execute(
+                        "SELECT 1 FROM hidden_timeline_days WHERE user_id = %s AND record_date = %s",
+                        (user_id, date),
+                    )
+                    if cursor.fetchone():
+                        return []
+
+                query = """
+                SELECT id, emotion, confidence, timestamp, image_path, state_change, previous_emotion
+                FROM frame_emotions
+                WHERE user_id = %s
+                """
+                params = [user_id]
+                if date:
+                    query += " AND DATE(timestamp) = %s"
+                    params.append(date)
+                query += " ORDER BY timestamp DESC"
+                cursor.execute(query, params)
+                frames = cursor.fetchall()
+
+        for frame in frames:
+            if frame.get('image_path'):
+                frame['image_url'] = f"/frame-emotion/{frame['id']}/image"
+            else:
+                frame['image_url'] = None
+            timestamp_val = frame.get('timestamp')
+            if timestamp_val is not None and not isinstance(timestamp_val, str):
+                frame['timestamp'] = timestamp_val.isoformat()
+            frame['state_change'] = bool(frame['state_change'])
+            frame['confidence'] = float(frame['confidence'])
+        return frames
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+@app.get("/emotion-timeline/{user_id}/hidden")
+def is_user_emotion_timeline_hidden(user_id: int, date: str):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT 1 FROM hidden_timeline_days WHERE user_id = %s AND record_date = %s",
+                    (user_id, date),
+                )
+                hidden = cursor.fetchone() is not None
+        return {"hidden": hidden}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+@app.post("/emotion-timeline/{user_id}/hide")
+def hide_user_emotion_timeline(user_id: int, date: str):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO hidden_timeline_days (user_id, record_date, hidden_at) VALUES (%s, %s, CURRENT_TIMESTAMP()) "
+                    "ON DUPLICATE KEY UPDATE hidden_at = CURRENT_TIMESTAMP()",
+                    (user_id, date),
+                )
+                conn.commit()
+        return {"hidden": True}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+@app.delete("/emotion-timeline/{user_id}/hide")
+def restore_user_emotion_timeline(user_id: int, date: str):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "DELETE FROM hidden_timeline_days WHERE user_id = %s AND record_date = %s",
+                    (user_id, date),
+                )
+                conn.commit()
+        return {"hidden": False}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
 
 @app.get("/admin/emotion-timeline/{user_id}")
 def get_emotion_timeline(user_id: int, date: str = None):

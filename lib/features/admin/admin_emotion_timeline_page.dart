@@ -53,6 +53,7 @@ class _AdminEmotionTimelinePageState extends State<AdminEmotionTimelinePage> {
       _timelineFuture = ApiService.getEmotionTimeline(
         _selectedUserId!,
         date: _selectedDate,
+        adminView: true,
       );
     });
   }

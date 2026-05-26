@@ -306,8 +306,12 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getEmotionTimeline(
     int userId, {
     DateTime? date,
+    bool adminView = false,
   }) async {
-    final uri = Uri.parse('$baseUrl/admin/emotion-timeline/$userId').replace(
+    final path = adminView
+        ? '$baseUrl/admin/emotion-timeline/$userId'
+        : '$baseUrl/emotion-timeline/$userId';
+    final uri = Uri.parse(path).replace(
       queryParameters: date != null
           ? {'date': date.toIso8601String().split('T')[0]}
           : null,
@@ -324,6 +328,66 @@ class ApiService {
       }).toList();
     }
     throw Exception('Failed to load emotion timeline');
+  }
+
+  static Future<List<Map<String, dynamic>>> getNotifications({
+    int? userId,
+  }) async {
+    final uri = Uri.parse('$baseUrl/notifications').replace(
+      queryParameters: userId != null ? {'user_id': userId.toString()} : null,
+    );
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final List<dynamic> body = jsonDecode(response.body);
+      return body.map((item) {
+        final notification = item as Map<String, dynamic>;
+        notification['is_read'] =
+            notification['is_read'] == true || notification['is_read'] == 1;
+        return notification;
+      }).toList();
+    }
+    throw Exception('Failed to load notifications');
+  }
+
+  static Future<bool> markNotificationRead(int notificationId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/notifications/$notificationId/read'),
+    );
+    return response.statusCode == 200;
+  }
+
+  static Future<bool> isEmotionTimelineDateHidden(
+    int userId,
+    DateTime date,
+  ) async {
+    final uri = Uri.parse(
+      '$baseUrl/emotion-timeline/$userId/hidden',
+    ).replace(queryParameters: {'date': date.toIso8601String().split('T')[0]});
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      return body['hidden'] == true;
+    }
+    return false;
+  }
+
+  static Future<bool> hideEmotionTimelineDate(int userId, DateTime date) async {
+    final uri = Uri.parse(
+      '$baseUrl/emotion-timeline/$userId/hide',
+    ).replace(queryParameters: {'date': date.toIso8601String().split('T')[0]});
+    final response = await http.post(uri);
+    return response.statusCode == 200;
+  }
+
+  static Future<bool> restoreEmotionTimelineDate(
+    int userId,
+    DateTime date,
+  ) async {
+    final uri = Uri.parse(
+      '$baseUrl/emotion-timeline/$userId/hide',
+    ).replace(queryParameters: {'date': date.toIso8601String().split('T')[0]});
+    final response = await http.delete(uri);
+    return response.statusCode == 200;
   }
 
   static Future<List<Map<String, dynamic>>> getAdminLatestAiAnalyses({
