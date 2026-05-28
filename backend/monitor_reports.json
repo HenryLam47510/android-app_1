@@ -1,5 +1,37 @@
 [
   {
+    "user_id": 3,
+    "away_seconds": 8,
+    "source": "background",
+    "note": null,
+    "timestamp": "2026-05-27T22:54:17.510193",
+    "user_name": "HoangLam"
+  },
+  {
+    "user_id": 3,
+    "away_seconds": 5,
+    "source": "background",
+    "note": null,
+    "timestamp": "2026-05-27T22:54:06.438120",
+    "user_name": "HoangLam"
+  },
+  {
+    "user_id": 3,
+    "away_seconds": 2,
+    "source": "tab",
+    "note": null,
+    "timestamp": "2026-05-27T22:27:33.295819",
+    "user_name": "HoangLam"
+  },
+  {
+    "user_id": 3,
+    "away_seconds": 2,
+    "source": "background",
+    "note": null,
+    "timestamp": "2026-05-27T22:27:06.393075",
+    "user_name": "HoangLam"
+  },
+  {
     "user_id": 2,
     "away_seconds": 9,
     "source": "background",

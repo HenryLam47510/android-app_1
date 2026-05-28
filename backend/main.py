@@ -1251,8 +1251,11 @@ def admin_latest_ai_analyses(limit: int = 50, user_id: int = None, date: str = N
             timestamp_val = analysis.get('timestamp')
             if timestamp_val is not None and not isinstance(timestamp_val, str):
                 analysis['timestamp'] = timestamp_val.isoformat()
-            analysis['state_change'] = bool(analysis['state_change'])
-            analysis['confidence'] = float(analysis['confidence'])
+            analysis['state_change'] = bool(analysis.get('state_change', False))
+            try:
+                analysis['confidence'] = float(analysis.get('confidence') or 0.0)
+            except Exception:
+                analysis['confidence'] = 0.0
         return analyses
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -1662,8 +1665,11 @@ def get_user_emotion_timeline(user_id: int, date: str = None):
             timestamp_val = frame.get('timestamp')
             if timestamp_val is not None and not isinstance(timestamp_val, str):
                 frame['timestamp'] = timestamp_val.isoformat()
-            frame['state_change'] = bool(frame['state_change'])
-            frame['confidence'] = float(frame['confidence'])
+            frame['state_change'] = bool(frame.get('state_change', False))
+            try:
+                frame['confidence'] = float(frame.get('confidence') or 0.0)
+            except Exception:
+                frame['confidence'] = 0.0
         return frames
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -1737,8 +1743,11 @@ def get_emotion_timeline(user_id: int, date: str = None):
             timestamp_val = frame.get('timestamp')
             if timestamp_val is not None and not isinstance(timestamp_val, str):
                 frame['timestamp'] = timestamp_val.isoformat()
-            frame['state_change'] = bool(frame['state_change'])
-            frame['confidence'] = float(frame['confidence'])
+            frame['state_change'] = bool(frame.get('state_change', False))
+            try:
+                frame['confidence'] = float(frame.get('confidence') or 0.0)
+            except Exception:
+                frame['confidence'] = 0.0
         return frames
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
